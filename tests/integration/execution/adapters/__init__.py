@@ -1,0 +1,1 @@
+"""Exchange adapter integration tests."""
