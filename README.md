@@ -24,7 +24,7 @@ An advanced cryptocurrency trading bot that combines traditional algorithmic tra
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd bot
+cd bot/potato-trading-bot
 
 # Create virtual environment
 python3.11 -m venv venv
@@ -50,9 +50,10 @@ python -m bot.cli backtest --symbol BTCUSDT --start 2021-01-01 --end 2022-01-01
 
 ## Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** - Comprehensive guide for developers and Claude Code
-- **[Technical Design](AI-Enhanced%20Crypto%20Trading%20Bot_%20Technical%20Design%20&%20Implementation%20Plan.pdf)** - Full architecture and implementation plan
-- **[Expert Review](Claude_ai-trading-bot-review.md)** - Critical review and realistic expectations
+- **[CLAUDE.md](../CLAUDE.md)** - Comprehensive guide for developers and Claude Code
+- **[Technical Design](../AI-Enhanced%20Crypto%20Trading%20Bot_%20Technical%20Design%20&%20Implementation%20Plan.pdf)** - Full architecture and implementation plan
+- **[Expert Review](../Claude_ai-trading-bot-review.md)** - Critical review and realistic expectations
+- **[Task Breakdown](../TASK_BREAKDOWN.md)** - Detailed task breakdown for all phases
 
 ## Architecture
 
@@ -138,7 +139,7 @@ The bot uses YAML configuration profiles in `config/profiles/`:
 - `paper.yaml` - Paper trading
 - `prod.yaml` - Live trading
 
-See [CLAUDE.md](CLAUDE.md) for detailed configuration options.
+See [CLAUDE.md](../CLAUDE.md) for detailed configuration options.
 
 ## Monitoring
 
@@ -163,9 +164,9 @@ Proprietary - All rights reserved
 ## Support
 
 For issues or questions, refer to:
-- [CLAUDE.md](CLAUDE.md) for development guidance
-- Technical design document for architecture details
-- Expert review document for realistic expectations
+- [CLAUDE.md](../CLAUDE.md) for development guidance
+- [Technical design](../AI-Enhanced%20Crypto%20Trading%20Bot_%20Technical%20Design%20&%20Implementation%20Plan.pdf) for architecture details
+- [Expert review](../Claude_ai-trading-bot-review.md) for realistic expectations
 
 ---
 
