@@ -34,6 +34,7 @@ logger = get_logger(__name__)
 
 class ConnectionState(Enum):
     """WebSocket connection states"""
+
     DISCONNECTED = "disconnected"
     CONNECTING = "connecting"
     CONNECTED = "connected"
@@ -44,6 +45,7 @@ class ConnectionState(Enum):
 @dataclass
 class MarketTick:
     """Normalized market tick data structure"""
+
     symbol: str
     timestamp: int  # Unix timestamp in milliseconds
     price: float
@@ -85,19 +87,21 @@ class MarketDataBuffer:
     """
 
     # PyArrow schema for market tick data
-    SCHEMA = pa.schema([
-        ("symbol", pa.string()),
-        ("timestamp", pa.int64()),
-        ("price", pa.float64()),
-        ("volume", pa.float64()),
-        ("bid", pa.float64()),
-        ("ask", pa.float64()),
-        ("high", pa.float64()),
-        ("low", pa.float64()),
-        ("open", pa.float64()),
-        ("close", pa.float64()),
-        ("exchange", pa.string()),
-    ])
+    SCHEMA = pa.schema(
+        [
+            ("symbol", pa.string()),
+            ("timestamp", pa.int64()),
+            ("price", pa.float64()),
+            ("volume", pa.float64()),
+            ("bid", pa.float64()),
+            ("ask", pa.float64()),
+            ("high", pa.float64()),
+            ("low", pa.float64()),
+            ("open", pa.float64()),
+            ("close", pa.float64()),
+            ("exchange", pa.string()),
+        ]
+    )
 
     def __init__(self, max_size: int = 10000):
         """
@@ -132,7 +136,7 @@ class MarketDataBuffer:
 
             # Enforce max size with ring buffer behavior
             if len(self._buffers[symbol]) > self.max_size:
-                self._buffers[symbol] = self._buffers[symbol][-self.max_size:]
+                self._buffers[symbol] = self._buffers[symbol][-self.max_size :]
 
             # Rebuild PyArrow table every 100 ticks for efficiency
             if len(self._buffers[symbol]) % 100 == 0:
@@ -146,10 +150,7 @@ class MarketDataBuffer:
             symbol: Trading pair symbol
         """
         if symbol in self._buffers and self._buffers[symbol]:
-            self._tables[symbol] = pa.Table.from_pylist(
-                self._buffers[symbol],
-                schema=self.SCHEMA
-            )
+            self._tables[symbol] = pa.Table.from_pylist(self._buffers[symbol], schema=self.SCHEMA)
 
     async def get_latest(self, symbol: str, limit: int = 100) -> Optional[pd.DataFrame]:
         """
@@ -176,10 +177,7 @@ class MarketDataBuffer:
             return df.tail(limit)
 
     async def get_range(
-        self,
-        symbol: str,
-        start_time: int,
-        end_time: int
+        self, symbol: str, start_time: int, end_time: int
     ) -> Optional[pd.DataFrame]:
         """
         Get ticks within a time range.
@@ -199,10 +197,7 @@ class MarketDataBuffer:
             table = self._tables[symbol]
 
             # Filter by timestamp
-            mask = (
-                (table["timestamp"] >= start_time) &
-                (table["timestamp"] <= end_time)
-            )
+            mask = (table["timestamp"] >= start_time) & (table["timestamp"] <= end_time)
             filtered = table.filter(mask)
 
             return filtered.to_pandas() if len(filtered) > 0 else None
@@ -444,7 +439,7 @@ class MarketDataStream:
             # Try to split common pairs
             for quote in ["USDT", "BUSD", "USD", "BTC", "ETH"]:
                 if symbol.endswith(quote):
-                    base = symbol[:-len(quote)]
+                    base = symbol[: -len(quote)]
                     return f"{base}/{quote}"
 
         return symbol

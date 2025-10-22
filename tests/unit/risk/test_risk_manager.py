@@ -392,6 +392,7 @@ class TestCorrelationExposure:
         """Test that low correlation exposure passes."""
         # Mock correlation matrix with low correlations
         import pandas as pd
+
         correlation_data = {
             "BTCUSDT": {"BTCUSDT": 1.0, "ETHUSDT": 0.3, "ADAUSDT": 0.2},
             "ETHUSDT": {"BTCUSDT": 0.3, "ETHUSDT": 1.0, "ADAUSDT": 0.4},
@@ -410,6 +411,7 @@ class TestCorrelationExposure:
         """Test that high correlation exposure triggers warning."""
         # Mock correlation matrix with high correlations
         import pandas as pd
+
         correlation_data = {
             "BTCUSDT": {"BTCUSDT": 1.0, "ETHUSDT": 0.9, "ADAUSDT": 0.85},
             "ETHUSDT": {"BTCUSDT": 0.9, "ETHUSDT": 1.0, "ADAUSDT": 0.88},
@@ -435,9 +437,7 @@ class TestATRPositionSizing:
     async def test_atr_calculation_with_history(self, risk_manager, mock_exchange):
         """Test ATR position sizing with sufficient price history."""
         # Mock price history
-        risk_manager._price_history["BTCUSDT"] = [
-            50000 + i * 100 for i in range(20)
-        ]
+        risk_manager._price_history["BTCUSDT"] = [50000 + i * 100 for i in range(20)]
 
         position_size = await risk_manager.calculate_position_size_atr(
             "BTCUSDT",

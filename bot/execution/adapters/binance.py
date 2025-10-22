@@ -75,8 +75,7 @@ class RateLimiter:
 
             # Refill tokens based on elapsed time
             self.tokens = min(
-                self.max_requests,
-                self.tokens + (elapsed / self.time_window) * self.max_requests
+                self.max_requests, self.tokens + (elapsed / self.time_window) * self.max_requests
             )
             self.last_update = now
 
@@ -152,8 +151,7 @@ class BinanceAdapter(ExchangeInterface):
 
         # Logger with context
         self.logger = logger.bind(
-            exchange="binance",
-            environment="testnet" if testnet else "mainnet"
+            exchange="binance", environment="testnet" if testnet else "mainnet"
         )
 
     async def connect(self) -> None:
@@ -168,7 +166,7 @@ class BinanceAdapter(ExchangeInterface):
                 headers={
                     "X-MBX-APIKEY": self.api_key,
                     "Content-Type": "application/json",
-                }
+                },
             )
 
             # Test connectivity
@@ -206,9 +204,7 @@ class BinanceAdapter(ExchangeInterface):
         """
         query_string = urlencode(params)
         signature = hmac.new(
-            self.api_secret.encode("utf-8"),
-            query_string.encode("utf-8"),
-            hashlib.sha256
+            self.api_secret.encode("utf-8"), query_string.encode("utf-8"), hashlib.sha256
         ).hexdigest()
         return signature
 
@@ -263,7 +259,7 @@ class BinanceAdapter(ExchangeInterface):
                     method=method,
                     endpoint=endpoint,
                     attempt=attempt + 1,
-                    params=self._sanitize_params(params)
+                    params=self._sanitize_params(params),
                 )
 
                 # Make request
@@ -286,7 +282,7 @@ class BinanceAdapter(ExchangeInterface):
                         "binance_response",
                         status=response.status,
                         endpoint=endpoint,
-                        response_length=len(response_text)
+                        response_length=len(response_text),
                     )
 
                     # Handle successful response
@@ -297,7 +293,7 @@ class BinanceAdapter(ExchangeInterface):
                             raise ExchangeAPIError(
                                 f"Failed to parse response: {str(e)}",
                                 status_code=response.status,
-                                response={"raw": response_text}
+                                response={"raw": response_text},
                             )
 
                     # Parse error response
@@ -316,10 +312,12 @@ class BinanceAdapter(ExchangeInterface):
                             self.logger.warning(
                                 "rate_limit_exceeded_retrying",
                                 attempt=attempt + 1,
-                                retry_delay=retry_delay
+                                retry_delay=retry_delay,
                             )
                             await asyncio.sleep(retry_delay)
-                            retry_delay = min(retry_delay * self.RETRY_BACKOFF_FACTOR, self.MAX_RETRY_DELAY)
+                            retry_delay = min(
+                                retry_delay * self.RETRY_BACKOFF_FACTOR, self.MAX_RETRY_DELAY
+                            )
                             continue
                         raise RateLimitExceededError(f"Rate limit exceeded: {error_msg}")
 
@@ -337,9 +335,7 @@ class BinanceAdapter(ExchangeInterface):
 
                     # Generic API error
                     raise ExchangeAPIError(
-                        f"API error: {error_msg}",
-                        status_code=response.status,
-                        response=error_data
+                        f"API error: {error_msg}", status_code=response.status, response=error_data
                     )
 
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
@@ -349,7 +345,7 @@ class BinanceAdapter(ExchangeInterface):
                         "request_failed_retrying",
                         attempt=attempt + 1,
                         error=str(e),
-                        retry_delay=retry_delay
+                        retry_delay=retry_delay,
                     )
                     await asyncio.sleep(retry_delay)
                     retry_delay = min(retry_delay * self.RETRY_BACKOFF_FACTOR, self.MAX_RETRY_DELAY)
@@ -398,12 +394,9 @@ class BinanceAdapter(ExchangeInterface):
 
                 # Only include assets with non-zero balance
                 if total > 0:
-                    balances.append(Balance(
-                        asset=balance_data["asset"],
-                        free=free,
-                        locked=locked,
-                        total=total
-                    ))
+                    balances.append(
+                        Balance(asset=balance_data["asset"], free=free, locked=locked, total=total)
+                    )
 
             return AccountInfo(
                 account_type=response.get("accountType", "SPOT"),
@@ -450,7 +443,11 @@ class BinanceAdapter(ExchangeInterface):
             }
 
             # Add optional parameters
-            if order_type in [OrderType.LIMIT, OrderType.STOP_LOSS_LIMIT, OrderType.TAKE_PROFIT_LIMIT]:
+            if order_type in [
+                OrderType.LIMIT,
+                OrderType.STOP_LOSS_LIMIT,
+                OrderType.TAKE_PROFIT_LIMIT,
+            ]:
                 if price is None:
                     raise InvalidOrderError(f"Price required for {order_type} orders")
                 params["price"] = str(price)
@@ -471,11 +468,7 @@ class BinanceAdapter(ExchangeInterface):
 
             # Create order
             response = await self._request(
-                "POST",
-                "/api/v3/order",
-                signed=True,
-                params=params,
-                use_order_limiter=True
+                "POST", "/api/v3/order", signed=True, params=params, use_order_limiter=True
             )
 
             self.logger.info(
@@ -483,7 +476,7 @@ class BinanceAdapter(ExchangeInterface):
                 symbol=symbol,
                 side=side.value,
                 order_type=order_type.value,
-                order_id=response["orderId"]
+                order_id=response["orderId"],
             )
 
             return self._parse_order(response)
@@ -502,11 +495,7 @@ class BinanceAdapter(ExchangeInterface):
             }
 
             response = await self._request(
-                "DELETE",
-                "/api/v3/order",
-                signed=True,
-                params=params,
-                use_order_limiter=True
+                "DELETE", "/api/v3/order", signed=True, params=params, use_order_limiter=True
             )
 
             self.logger.info("order_canceled", symbol=symbol, order_id=order_id)
@@ -526,12 +515,7 @@ class BinanceAdapter(ExchangeInterface):
                 "orderId": int(order_id),
             }
 
-            response = await self._request(
-                "GET",
-                "/api/v3/order",
-                signed=True,
-                params=params
-            )
+            response = await self._request("GET", "/api/v3/order", signed=True, params=params)
 
             return self._parse_order(response)
 
@@ -547,12 +531,7 @@ class BinanceAdapter(ExchangeInterface):
             if symbol:
                 params["symbol"] = symbol
 
-            response = await self._request(
-                "GET",
-                "/api/v3/openOrders",
-                signed=True,
-                params=params
-            )
+            response = await self._request("GET", "/api/v3/openOrders", signed=True, params=params)
 
             return [self._parse_order(order_data) for order_data in response]
 
@@ -580,12 +559,7 @@ class BinanceAdapter(ExchangeInterface):
             if end_time:
                 params["endTime"] = int(end_time.timestamp() * 1000)
 
-            response = await self._request(
-                "GET",
-                "/api/v3/allOrders",
-                signed=True,
-                params=params
-            )
+            response = await self._request("GET", "/api/v3/allOrders", signed=True, params=params)
 
             return [self._parse_order(order_data) for order_data in response]
 
@@ -613,12 +587,7 @@ class BinanceAdapter(ExchangeInterface):
             if end_time:
                 params["endTime"] = int(end_time.timestamp() * 1000)
 
-            response = await self._request(
-                "GET",
-                "/api/v3/myTrades",
-                signed=True,
-                params=params
-            )
+            response = await self._request("GET", "/api/v3/myTrades", signed=True, params=params)
 
             return [self._parse_trade(trade_data) for trade_data in response]
 
@@ -632,11 +601,7 @@ class BinanceAdapter(ExchangeInterface):
         try:
             params = {"symbol": symbol}
 
-            response = await self._request(
-                "GET",
-                "/api/v3/ticker/price",
-                params=params
-            )
+            response = await self._request("GET", "/api/v3/ticker/price", params=params)
 
             return Decimal(response["price"])
 
@@ -712,9 +677,17 @@ class BinanceAdapter(ExchangeInterface):
             status=self._parse_order_status(data["status"]),
             filled_quantity=filled_quantity,
             remaining_quantity=quantity - filled_quantity,
-            average_price=Decimal(data["cummulativeQuoteQty"]) / filled_quantity if filled_quantity > 0 else None,
-            created_at=datetime.fromtimestamp(data["time"] / 1000) if "time" in data else datetime.now(),
-            updated_at=datetime.fromtimestamp(data["updateTime"] / 1000) if "updateTime" in data else None,
+            average_price=(
+                Decimal(data["cummulativeQuoteQty"]) / filled_quantity
+                if filled_quantity > 0
+                else None
+            ),
+            created_at=(
+                datetime.fromtimestamp(data["time"] / 1000) if "time" in data else datetime.now()
+            ),
+            updated_at=(
+                datetime.fromtimestamp(data["updateTime"] / 1000) if "updateTime" in data else None
+            ),
         )
 
     def _parse_order_type(self, binance_type: str) -> OrderType:

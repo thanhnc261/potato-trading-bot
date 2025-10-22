@@ -16,12 +16,14 @@ from pydantic import BaseModel, Field
 
 class OrderSide(str, Enum):
     """Order side enumeration."""
+
     BUY = "buy"
     SELL = "sell"
 
 
 class OrderType(str, Enum):
     """Order type enumeration."""
+
     MARKET = "market"
     LIMIT = "limit"
     STOP_LOSS = "stop_loss"
@@ -32,6 +34,7 @@ class OrderType(str, Enum):
 
 class OrderStatus(str, Enum):
     """Order status enumeration."""
+
     OPEN = "open"
     CLOSED = "closed"
     CANCELED = "canceled"
@@ -43,6 +46,7 @@ class OrderStatus(str, Enum):
 
 class TimeInForce(str, Enum):
     """Time in force enumeration."""
+
     GTC = "GTC"  # Good Till Cancel
     IOC = "IOC"  # Immediate or Cancel
     FOK = "FOK"  # Fill or Kill
@@ -50,6 +54,7 @@ class TimeInForce(str, Enum):
 
 class Balance(BaseModel):
     """Account balance for a specific asset."""
+
     asset: str = Field(..., description="Asset symbol (e.g., 'BTC', 'USDT')")
     free: Decimal = Field(..., description="Available balance for trading")
     locked: Decimal = Field(..., description="Balance locked in open orders")
@@ -58,6 +63,7 @@ class Balance(BaseModel):
 
 class Order(BaseModel):
     """Representation of an exchange order."""
+
     id: str = Field(..., description="Exchange order ID")
     client_order_id: Optional[str] = Field(None, description="Client-generated order ID")
     symbol: str = Field(..., description="Trading pair symbol (e.g., 'BTCUSDT')")
@@ -79,6 +85,7 @@ class Order(BaseModel):
 
 class Trade(BaseModel):
     """Representation of an executed trade."""
+
     id: str = Field(..., description="Trade ID")
     order_id: str = Field(..., description="Related order ID")
     symbol: str = Field(..., description="Trading pair symbol")
@@ -93,6 +100,7 @@ class Trade(BaseModel):
 
 class AccountInfo(BaseModel):
     """Exchange account information."""
+
     account_type: str = Field(..., description="Account type (e.g., 'SPOT', 'MARGIN')")
     can_trade: bool = Field(..., description="Whether trading is enabled")
     can_withdraw: bool = Field(..., description="Whether withdrawals are enabled")
@@ -328,23 +336,28 @@ class ExchangeInterface(ABC):
 # Custom exceptions for exchange operations
 class ExchangeError(Exception):
     """Base exception for exchange-related errors."""
+
     pass
 
 
 class ExchangeConnectionError(ExchangeError):
     """Raised when connection to exchange fails."""
+
     pass
 
 
 class ExchangeAuthenticationError(ExchangeError):
     """Raised when authentication with exchange fails."""
+
     pass
 
 
 class ExchangeAPIError(ExchangeError):
     """Raised when API request fails."""
 
-    def __init__(self, message: str, status_code: Optional[int] = None, response: Optional[Dict] = None):
+    def __init__(
+        self, message: str, status_code: Optional[int] = None, response: Optional[Dict] = None
+    ):
         super().__init__(message)
         self.status_code = status_code
         self.response = response
@@ -352,19 +365,23 @@ class ExchangeAPIError(ExchangeError):
 
 class InvalidOrderError(ExchangeError):
     """Raised when order parameters are invalid."""
+
     pass
 
 
 class OrderNotFoundError(ExchangeError):
     """Raised when order is not found."""
+
     pass
 
 
 class InsufficientBalanceError(ExchangeError):
     """Raised when account has insufficient balance."""
+
     pass
 
 
 class RateLimitExceededError(ExchangeError):
     """Raised when rate limit is exceeded."""
+
     pass

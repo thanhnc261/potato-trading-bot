@@ -346,11 +346,13 @@ class TestMarketDataStream:
         # Mock exchange
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
-        mock_exchange.fetch_ticker = AsyncMock(return_value={
-            "timestamp": 1700000000000,
-            "last": 45000.0,
-            "volume": 100.0,
-        })
+        mock_exchange.fetch_ticker = AsyncMock(
+            return_value={
+                "timestamp": 1700000000000,
+                "last": 45000.0,
+                "volume": 100.0,
+            }
+        )
 
         with patch.object(stream, "_create_exchange", return_value=mock_exchange):
             await stream.connect()
@@ -479,11 +481,13 @@ class TestMarketDataStream:
         # Mock exchange
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
-        mock_exchange.fetch_ticker = AsyncMock(return_value={
-            "timestamp": 1700000000000,
-            "last": 45000.0,
-            "volume": 100.0,
-        })
+        mock_exchange.fetch_ticker = AsyncMock(
+            return_value={
+                "timestamp": 1700000000000,
+                "last": 45000.0,
+                "volume": 100.0,
+            }
+        )
 
         with patch.object(stream, "_create_exchange", return_value=mock_exchange):
             await stream.connect()
@@ -519,7 +523,9 @@ class TestMarketDataManager:
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             stream = await manager.add_stream("binance", testnet=True)
 
             assert stream is not None
@@ -537,7 +543,9 @@ class TestMarketDataManager:
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             await manager.add_stream("binance", testnet=True)
 
             stream = manager.get_stream("binance")
@@ -556,7 +564,9 @@ class TestMarketDataManager:
         mock_exchange.load_markets = AsyncMock()
         mock_exchange.close = AsyncMock()
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             await manager.add_stream("binance", testnet=True)
             await manager.remove_stream("binance")
 
@@ -572,7 +582,9 @@ class TestMarketDataManager:
         mock_exchange.load_markets = AsyncMock()
         mock_exchange.close = AsyncMock()
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             # Add multiple streams
             await manager.add_stream("binance", testnet=True)
             await manager.add_stream("coinbase", testnet=True)
@@ -593,7 +605,9 @@ class TestMarketDataManager:
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             # Add streams for different exchanges
             binance_stream = await manager.add_stream("binance", testnet=True)
             coinbase_stream = await manager.add_stream("coinbase", testnet=True)
@@ -617,15 +631,19 @@ class TestIntegration:
         # Mock exchange
         mock_exchange = AsyncMock()
         mock_exchange.load_markets = AsyncMock()
-        mock_exchange.fetch_ticker = AsyncMock(return_value={
-            "timestamp": int(time.time() * 1000),
-            "last": 45000.0,
-            "volume": 100.0,
-            "bid": 44999.0,
-            "ask": 45001.0,
-        })
+        mock_exchange.fetch_ticker = AsyncMock(
+            return_value={
+                "timestamp": int(time.time() * 1000),
+                "last": 45000.0,
+                "volume": 100.0,
+                "bid": 44999.0,
+                "ask": 45001.0,
+            }
+        )
 
-        with patch("bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange):
+        with patch(
+            "bot.data.market_data.MarketDataStream._create_exchange", return_value=mock_exchange
+        ):
             # Add stream
             stream = await manager.add_stream("binance", testnet=True)
 

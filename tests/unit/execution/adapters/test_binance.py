@@ -94,11 +94,7 @@ class TestBinanceAdapter:
     @pytest.fixture
     def adapter(self):
         """Create a Binance adapter instance for testing."""
-        return BinanceAdapter(
-            api_key="test_api_key",
-            api_secret="test_api_secret",
-            testnet=True
-        )
+        return BinanceAdapter(api_key="test_api_key", api_secret="test_api_secret", testnet=True)
 
     @pytest.fixture
     def mock_session(self):
@@ -116,9 +112,7 @@ class TestBinanceAdapter:
     def test_initialization_mainnet(self):
         """Test adapter initialization with mainnet."""
         adapter = BinanceAdapter(
-            api_key="test_api_key",
-            api_secret="test_api_secret",
-            testnet=False
+            api_key="test_api_key", api_secret="test_api_secret", testnet=False
         )
         assert adapter.testnet is False
         assert adapter.base_url == BinanceAdapter.MAINNET_BASE_URL
@@ -185,7 +179,7 @@ class TestBinanceAdapter:
                 with patch.object(
                     adapter,
                     "get_account_info",
-                    side_effect=ExchangeAuthenticationError("Invalid API key")
+                    side_effect=ExchangeAuthenticationError("Invalid API key"),
                 ):
                     with pytest.raises(ExchangeAuthenticationError):
                         await adapter.connect()
@@ -266,7 +260,9 @@ class TestBinanceAdapter:
         # First request hits rate limit, second succeeds
         rate_limit_response = AsyncMock()
         rate_limit_response.status = 429
-        rate_limit_response.json = AsyncMock(return_value={"code": -1003, "msg": "Too many requests"})
+        rate_limit_response.json = AsyncMock(
+            return_value={"code": -1003, "msg": "Too many requests"}
+        )
         rate_limit_response.__aenter__ = AsyncMock(return_value=rate_limit_response)
         rate_limit_response.__aexit__ = AsyncMock(return_value=None)
 
@@ -393,8 +389,15 @@ class TestBinanceAdapter:
         """Test getting balance for specific asset."""
         mock_account_info = MagicMock()
         mock_account_info.balances = [
-            MagicMock(asset="BTC", free=Decimal("1.5"), locked=Decimal("0.5"), total=Decimal("2.0")),
-            MagicMock(asset="USDT", free=Decimal("10000.0"), locked=Decimal("0.0"), total=Decimal("10000.0")),
+            MagicMock(
+                asset="BTC", free=Decimal("1.5"), locked=Decimal("0.5"), total=Decimal("2.0")
+            ),
+            MagicMock(
+                asset="USDT",
+                free=Decimal("10000.0"),
+                locked=Decimal("0.0"),
+                total=Decimal("10000.0"),
+            ),
         ]
 
         with patch.object(adapter, "get_account_info", return_value=mock_account_info):
@@ -425,7 +428,7 @@ class TestBinanceAdapter:
                 symbol="BTCUSDT",
                 side=OrderSide.BUY,
                 order_type=OrderType.MARKET,
-                quantity=Decimal("0.1")
+                quantity=Decimal("0.1"),
             )
 
             assert order.id == "12345"
@@ -459,7 +462,7 @@ class TestBinanceAdapter:
                 order_type=OrderType.LIMIT,
                 quantity=Decimal("0.1"),
                 price=Decimal("55000.0"),
-                time_in_force=TimeInForce.GTC
+                time_in_force=TimeInForce.GTC,
             )
 
             assert order.id == "12346"
@@ -476,7 +479,7 @@ class TestBinanceAdapter:
                 symbol="BTCUSDT",
                 side=OrderSide.BUY,
                 order_type=OrderType.LIMIT,
-                quantity=Decimal("0.1")
+                quantity=Decimal("0.1"),
             )
 
     @pytest.mark.asyncio

@@ -150,9 +150,7 @@ def setup_logging(
 
     if enable_json:
         # JSON renderer for file logs
-        file_processors = processors + [
-            structlog.processors.JSONRenderer()
-        ]
+        file_processors = processors + [structlog.processors.JSONRenderer()]
     else:
         file_processors = processors + [
             structlog.processors.KeyValueRenderer(key_order=["timestamp", "level", "event"])
@@ -160,17 +158,14 @@ def setup_logging(
 
     # Console renderer (with or without colors)
     if enable_colors and sys.stdout.isatty():
-        console_processors = processors + [
-            structlog.dev.ConsoleRenderer(colors=True)
-        ]
+        console_processors = processors + [structlog.dev.ConsoleRenderer(colors=True)]
     else:
-        console_processors = processors + [
-            structlog.processors.KeyValueRenderer()
-        ]
+        console_processors = processors + [structlog.processors.KeyValueRenderer()]
 
     # Configure structlog
     structlog.configure(
-        processors=processors + [
+        processors=processors
+        + [
             structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
         ],
         logger_factory=structlog.stdlib.LoggerFactory(),
@@ -180,14 +175,20 @@ def setup_logging(
 
     # Create formatters
     file_formatter = structlog.stdlib.ProcessorFormatter(
-        processor=structlog.processors.JSONRenderer() if enable_json
-        else structlog.processors.KeyValueRenderer(),
+        processor=(
+            structlog.processors.JSONRenderer()
+            if enable_json
+            else structlog.processors.KeyValueRenderer()
+        ),
         foreign_pre_chain=file_processors,
     )
 
     console_formatter = structlog.stdlib.ProcessorFormatter(
-        processor=structlog.dev.ConsoleRenderer(colors=enable_colors) if enable_colors
-        else structlog.processors.KeyValueRenderer(),
+        processor=(
+            structlog.dev.ConsoleRenderer(colors=enable_colors)
+            if enable_colors
+            else structlog.processors.KeyValueRenderer()
+        ),
         foreign_pre_chain=console_processors,
     )
 
@@ -232,6 +233,7 @@ def get_logger(name: Optional[str] = None) -> structlog.stdlib.BoundLogger:
     """
     if name is None:
         import inspect
+
         frame = inspect.currentframe()
         if frame and frame.f_back:
             name = frame.f_back.f_globals.get("__name__", "bot")

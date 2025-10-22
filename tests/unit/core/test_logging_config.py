@@ -339,7 +339,5 @@ class TestLogRotation:
         # Check for TimedRotatingFileHandler
         from logging.handlers import TimedRotatingFileHandler
 
-        file_handlers = [
-            h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)
-        ]
+        file_handlers = [h for h in root_logger.handlers if isinstance(h, TimedRotatingFileHandler)]
         assert len(file_handlers) >= 2  # system and error handlers

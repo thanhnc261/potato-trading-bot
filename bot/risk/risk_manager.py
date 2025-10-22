@@ -32,6 +32,7 @@ logger = get_logger(__name__)
 
 class RiskCheckStatus(str, Enum):
     """Risk check result status."""
+
     PASSED = "passed"
     FAILED = "failed"
     WARNING = "warning"
@@ -52,6 +53,7 @@ class RiskCheckResult:
         value: Actual value measured
         threshold: Threshold value for the check
     """
+
     check_name: str
     status: RiskCheckStatus
     passed: bool
@@ -88,6 +90,7 @@ class TradeValidationResult:
         quantity: Order quantity
         estimated_value: Estimated trade value
     """
+
     approved: bool
     results: List[RiskCheckResult]
     correlation_id: str
@@ -358,7 +361,9 @@ class RiskManager:
         Returns:
             RiskCheckResult for position size
         """
-        max_position_value = self.current_portfolio_value * Decimal(str(self.config.max_position_size_pct))
+        max_position_value = self.current_portfolio_value * Decimal(
+            str(self.config.max_position_size_pct)
+        )
         position_pct = float(position_value / self.current_portfolio_value)
 
         passed = position_value <= max_position_value
@@ -391,7 +396,9 @@ class RiskManager:
         """
         current_exposure = sum(self._open_positions.values())
         total_exposure = current_exposure + new_position_value
-        max_exposure = self.current_portfolio_value * Decimal(str(self.config.max_total_exposure_pct))
+        max_exposure = self.current_portfolio_value * Decimal(
+            str(self.config.max_total_exposure_pct)
+        )
         exposure_pct = float(total_exposure / self.current_portfolio_value)
 
         passed = total_exposure <= max_exposure
@@ -638,11 +645,13 @@ class RiskManager:
                     correlation = self._correlation_matrix.loc[symbol, pos_symbol]
                     if abs(correlation) > 0.7:  # High correlation threshold
                         correlated_exposure += pos_value
-                        high_correlations.append({
-                            "symbol": pos_symbol,
-                            "correlation": float(correlation),
-                            "value": str(pos_value),
-                        })
+                        high_correlations.append(
+                            {
+                                "symbol": pos_symbol,
+                                "correlation": float(correlation),
+                                "value": str(pos_value),
+                            }
+                        )
 
             # Check if correlated exposure is excessive
             total_correlated = correlated_exposure + position_value
@@ -712,7 +721,7 @@ class RiskManager:
 
             # Calculate ATR (simplified 14-period)
             prices = self._price_history[symbol][-14:]
-            price_changes = [abs(prices[i] - prices[i-1]) for i in range(1, len(prices))]
+            price_changes = [abs(prices[i] - prices[i - 1]) for i in range(1, len(prices))]
             atr = np.mean(price_changes)
 
             # Get current price
@@ -725,7 +734,9 @@ class RiskManager:
             position_size = risk_amount / stop_distance if stop_distance > 0 else Decimal(0)
 
             # Cap at max position size
-            max_position_value = self.current_portfolio_value * Decimal(str(self.config.max_position_size_pct))
+            max_position_value = self.current_portfolio_value * Decimal(
+                str(self.config.max_position_size_pct)
+            )
             max_quantity = max_position_value / current_price
 
             final_size = min(position_size, max_quantity)
@@ -853,7 +864,9 @@ class RiskManager:
             add: True to add position, False to remove
         """
         if add:
-            self._open_positions[symbol] = self._open_positions.get(symbol, Decimal(0)) + position_value
+            self._open_positions[symbol] = (
+                self._open_positions.get(symbol, Decimal(0)) + position_value
+            )
             logger.info("position_added", symbol=symbol, value=str(position_value))
         else:
             current = self._open_positions.get(symbol, Decimal(0))
@@ -909,8 +922,16 @@ class RiskManager:
             Dictionary containing current risk metrics
         """
         total_exposure = sum(self._open_positions.values())
-        exposure_pct = float(total_exposure / self.current_portfolio_value) if self.current_portfolio_value > 0 else 0
-        daily_loss_pct = float(abs(self._daily_pnl) / self.initial_portfolio_value) if self.initial_portfolio_value > 0 else 0
+        exposure_pct = (
+            float(total_exposure / self.current_portfolio_value)
+            if self.current_portfolio_value > 0
+            else 0
+        )
+        daily_loss_pct = (
+            float(abs(self._daily_pnl) / self.initial_portfolio_value)
+            if self.initial_portfolio_value > 0
+            else 0
+        )
 
         return {
             "portfolio_value": str(self.current_portfolio_value),

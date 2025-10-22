@@ -38,8 +38,7 @@ class TestRealExchangeConnection:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_connect_to_binance_testnet(self, exchange_config):
         """Test connecting to Binance testnet"""
@@ -56,8 +55,7 @@ class TestRealExchangeConnection:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_stream_real_market_data(self, exchange_config):
         """Test streaming real market data from Binance testnet"""
@@ -88,8 +86,7 @@ class TestRealExchangeConnection:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_subscribe_unsubscribe_flow(self, exchange_config):
         """Test dynamic subscription management"""
@@ -127,8 +124,7 @@ class TestRealExchangeConnection:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_callback_real_data(self, exchange_config):
         """Test callbacks receive real-time data"""
@@ -164,8 +160,7 @@ class TestMultipleExchanges:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Exchange credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Exchange credentials not available"
     )
     async def test_manager_multiple_streams(self):
         """Test managing multiple exchange streams simultaneously"""
@@ -198,16 +193,11 @@ class TestReconnectionScenarios:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_heartbeat_detection(self, exchange_config):
         """Test that heartbeat monitor detects stale connections"""
-        stream = MarketDataStream(
-            heartbeat_interval=5,
-            reconnect_delay=2,
-            **exchange_config
-        )
+        stream = MarketDataStream(heartbeat_interval=5, reconnect_delay=2, **exchange_config)
 
         try:
             await stream.connect()
@@ -228,8 +218,7 @@ class TestDataQuality:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_data_normalization(self, exchange_config):
         """Test that data is properly normalized"""
@@ -249,8 +238,17 @@ class TestDataQuality:
 
             # Verify schema
             expected_columns = [
-                "symbol", "timestamp", "price", "volume",
-                "bid", "ask", "high", "low", "open", "close", "exchange"
+                "symbol",
+                "timestamp",
+                "price",
+                "volume",
+                "bid",
+                "ask",
+                "high",
+                "low",
+                "open",
+                "close",
+                "exchange",
             ]
             for col in expected_columns:
                 assert col in df.columns
@@ -264,8 +262,7 @@ class TestDataQuality:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_time_range_queries(self, exchange_config):
         """Test querying data by time range"""
@@ -299,8 +296,7 @@ class TestPerformance:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_high_frequency_data_collection(self, exchange_config):
         """Test collecting high-frequency data for multiple symbols"""
@@ -311,8 +307,14 @@ class TestPerformance:
 
             # Subscribe to many symbols
             symbols = [
-                "BTC/USDT", "ETH/USDT", "XRP/USDT", "ADA/USDT",
-                "SOL/USDT", "DOT/USDT", "MATIC/USDT", "LINK/USDT"
+                "BTC/USDT",
+                "ETH/USDT",
+                "XRP/USDT",
+                "ADA/USDT",
+                "SOL/USDT",
+                "DOT/USDT",
+                "MATIC/USDT",
+                "LINK/USDT",
             ]
             await stream.subscribe(symbols)
 
@@ -331,8 +333,7 @@ class TestPerformance:
 
     @pytest.mark.asyncio
     @pytest.mark.skipif(
-        not os.getenv("BINANCE_TESTNET_API_KEY"),
-        reason="Binance testnet credentials not available"
+        not os.getenv("BINANCE_TESTNET_API_KEY"), reason="Binance testnet credentials not available"
     )
     async def test_buffer_memory_efficiency(self, exchange_config):
         """Test that buffer maintains memory limits"""

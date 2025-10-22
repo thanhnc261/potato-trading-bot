@@ -43,22 +43,12 @@ class LoggingConfig(BaseModel):
 
     log_dir: Path = Field(default=Path("logs"), description="Directory for log files")
     log_level: LogLevel = Field(default=LogLevel.INFO, description="Global log level")
-    console_level: LogLevel = Field(
-        default=LogLevel.INFO, description="Console log level"
-    )
-    enable_json: bool = Field(
-        default=True, description="Enable JSON formatting for files"
-    )
-    enable_colors: bool = Field(
-        default=True, description="Enable colored console output"
-    )
-    rotation_when: str = Field(
-        default="midnight", description="When to rotate logs"
-    )
+    console_level: LogLevel = Field(default=LogLevel.INFO, description="Console log level")
+    enable_json: bool = Field(default=True, description="Enable JSON formatting for files")
+    enable_colors: bool = Field(default=True, description="Enable colored console output")
+    rotation_when: str = Field(default="midnight", description="When to rotate logs")
     rotation_interval: int = Field(default=1, description="Rotation interval")
-    backup_count: int = Field(
-        default=30, description="Number of backup files to keep", ge=0
-    )
+    backup_count: int = Field(default=30, description="Number of backup files to keep", ge=0)
 
     @field_validator("log_dir")
     @classmethod
@@ -93,9 +83,7 @@ class ExchangeConfig(BaseModel):
     api_secret: str = Field(description="API secret")
     testnet: bool = Field(default=True, description="Use testnet")
     timeout: int = Field(default=30, description="API timeout in seconds", ge=1)
-    rate_limit_per_second: int = Field(
-        default=10, description="Max API calls per second", ge=1
-    )
+    rate_limit_per_second: int = Field(default=10, description="Max API calls per second", ge=1)
 
     class Config:
         """Pydantic config."""
@@ -147,12 +135,8 @@ class RiskConfig(BaseModel):
         ge=0.001,
         le=1.0,
     )
-    var_confidence: float = Field(
-        default=0.95, description="VaR confidence level", ge=0.5, le=0.99
-    )
-    enable_emergency_stop: bool = Field(
-        default=True, description="Enable emergency stop system"
-    )
+    var_confidence: float = Field(default=0.95, description="VaR confidence level", ge=0.5, le=0.99)
+    enable_emergency_stop: bool = Field(default=True, description="Enable emergency stop system")
 
 
 class BotConfig(BaseModel):
@@ -170,9 +154,7 @@ class BotConfig(BaseModel):
 
     name: str = Field(default="Potato Trading Bot", description="Bot name")
     version: str = Field(default="0.1.0", description="Bot version")
-    environment: str = Field(
-        default="dev", description="Environment", pattern="^(dev|paper|prod)$"
-    )
+    environment: str = Field(default="dev", description="Environment", pattern="^(dev|paper|prod)$")
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     exchange: Optional[ExchangeConfig] = None
     risk: RiskConfig = Field(default_factory=RiskConfig)

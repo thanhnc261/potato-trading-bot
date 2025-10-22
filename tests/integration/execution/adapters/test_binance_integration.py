@@ -34,7 +34,7 @@ from bot.interfaces.exchange import (
 # Skip all tests if API credentials not available
 pytestmark = pytest.mark.skipif(
     not os.getenv("BINANCE_TESTNET_API_KEY") or not os.getenv("BINANCE_TESTNET_API_SECRET"),
-    reason="Binance testnet credentials not available. Set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET environment variables."
+    reason="Binance testnet credentials not available. Set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET environment variables.",
 )
 
 
@@ -44,11 +44,7 @@ async def adapter():
     api_key = os.getenv("BINANCE_TESTNET_API_KEY")
     api_secret = os.getenv("BINANCE_TESTNET_API_SECRET")
 
-    adapter = BinanceAdapter(
-        api_key=api_key,
-        api_secret=api_secret,
-        testnet=True
-    )
+    adapter = BinanceAdapter(api_key=api_key, api_secret=api_secret, testnet=True)
 
     await adapter.connect()
     yield adapter
@@ -144,7 +140,7 @@ class TestBinanceIntegration:
             order_type=OrderType.LIMIT,
             quantity=Decimal("0.001"),  # Minimum order size
             price=order_price,
-            time_in_force=TimeInForce.GTC
+            time_in_force=TimeInForce.GTC,
         )
 
         assert order.id is not None
@@ -157,13 +153,11 @@ class TestBinanceIntegration:
 
         # Wait a moment to ensure order is registered
         import asyncio
+
         await asyncio.sleep(1)
 
         # Cancel the order
-        canceled_order = await adapter.cancel_order(
-            symbol="BTCUSDT",
-            order_id=order.id
-        )
+        canceled_order = await adapter.cancel_order(symbol="BTCUSDT", order_id=order.id)
 
         assert canceled_order.id == order.id
         assert canceled_order.status == OrderStatus.CANCELED
@@ -181,14 +175,11 @@ class TestBinanceIntegration:
             order_type=OrderType.LIMIT,
             quantity=Decimal("0.001"),
             price=order_price,
-            time_in_force=TimeInForce.GTC
+            time_in_force=TimeInForce.GTC,
         )
 
         # Retrieve the order
-        retrieved_order = await adapter.get_order(
-            symbol="BTCUSDT",
-            order_id=created_order.id
-        )
+        retrieved_order = await adapter.get_order(symbol="BTCUSDT", order_id=created_order.id)
 
         assert retrieved_order.id == created_order.id
         assert retrieved_order.symbol == created_order.symbol
@@ -215,7 +206,7 @@ class TestBinanceIntegration:
             order_type=OrderType.LIMIT,
             quantity=Decimal("0.001"),
             price=order_price,
-            time_in_force=TimeInForce.GTC
+            time_in_force=TimeInForce.GTC,
         )
 
         # Get open orders
@@ -235,10 +226,7 @@ class TestBinanceIntegration:
         start_time = end_time - timedelta(days=7)
 
         orders = await adapter.get_order_history(
-            symbol="BTCUSDT",
-            start_time=start_time,
-            end_time=end_time,
-            limit=10
+            symbol="BTCUSDT", start_time=start_time, end_time=end_time, limit=10
         )
 
         assert isinstance(orders, list)
@@ -256,10 +244,7 @@ class TestBinanceIntegration:
         start_time = end_time - timedelta(days=7)
 
         trades = await adapter.get_trades(
-            symbol="BTCUSDT",
-            start_time=start_time,
-            end_time=end_time,
-            limit=10
+            symbol="BTCUSDT", start_time=start_time, end_time=end_time, limit=10
         )
 
         assert isinstance(trades, list)
@@ -290,9 +275,7 @@ class TestBinanceIntegration:
     async def test_invalid_authentication(self):
         """Test that invalid credentials raise authentication error."""
         invalid_adapter = BinanceAdapter(
-            api_key="invalid_key",
-            api_secret="invalid_secret",
-            testnet=True
+            api_key="invalid_key", api_secret="invalid_secret", testnet=True
         )
 
         with pytest.raises(ExchangeAuthenticationError):
@@ -336,7 +319,7 @@ class TestBinanceIntegrationErrorHandling:
                 symbol="BTCUSDT",
                 side=OrderSide.BUY,
                 order_type=OrderType.LIMIT,
-                quantity=Decimal("0.001")
+                quantity=Decimal("0.001"),
                 # Missing price parameter
             )
 
@@ -347,8 +330,7 @@ class TestBinanceIntegrationErrorHandling:
 
         with pytest.raises((OrderNotFoundError, ExchangeAPIError)):
             await adapter.cancel_order(
-                symbol="BTCUSDT",
-                order_id="99999999999"  # Non-existent order ID
+                symbol="BTCUSDT", order_id="99999999999"  # Non-existent order ID
             )
 
 
@@ -365,4 +347,6 @@ if __name__ == "__main__":
         export BINANCE_TESTNET_API_SECRET="your_secret"
         python -m pytest tests/integration/execution/adapters/test_binance_integration.py -v
     """
-    print("Run with pytest: pytest tests/integration/execution/adapters/test_binance_integration.py -v")
+    print(
+        "Run with pytest: pytest tests/integration/execution/adapters/test_binance_integration.py -v"
+    )
