@@ -1,0 +1,115 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Quick validation for PRs
+  quick-check:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff
+
+      - name: Check for merge conflicts
+        run: |
+          if git grep -l "<<<<<<< HEAD" -- '*.py'; then
+            echo "❌ Merge conflict markers found!"
+            exit 1
+          fi
+
+      - name: Check file sizes
+        run: |
+          find . -type f -size +10M -not -path "./.git/*" | while read file; do
+            echo "⚠️  Large file detected: $file"
+          done
+
+      - name: Lint changed files
+        run: |
+          git diff --name-only --diff-filter=AM origin/main...HEAD | \
+          grep '\.py$' | \
+          xargs -r black --check
+
+      - name: Ruff check changed files
+        run: |
+          git diff --name-only --diff-filter=AM origin/main...HEAD | \
+          grep '\.py$' | \
+          xargs -r ruff check
+
+  # PR title validation
+  pr-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Check if title follows conventional commit format
+          if echo "$PR_TITLE" | grep -qE "^(feat|fix|docs|style|refactor|perf|test|chore)(\(.+\))?: .+"; then
+            echo "✅ PR title follows conventional commit format"
+          else
+            echo "⚠️  PR title doesn't follow conventional commit format"
+            echo "Expected: type(scope): description"
+            echo "Examples:"
+            echo "  - feat(logging): add correlation ID support"
+            echo "  - fix(risk): correct slippage calculation"
+            echo "  - docs(readme): update installation guide"
+          fi
+
+  # Test coverage change
+  coverage-check:
+    name: Coverage Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ --cov=bot --cov-report=term --cov-report=json
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MINIMUM_GREEN: 70
+          MINIMUM_ORANGE: 50
+        continue-on-error: true
