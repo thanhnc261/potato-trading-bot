@@ -1,0 +1,34 @@
+# Paper Trading Configuration Profile
+# For paper trading with simulated fills
+
+bot:
+  name: "Potato Trading Bot"
+  version: "0.1.0"
+  environment: "paper"
+
+logging:
+  log_dir: "logs"
+  log_level: "INFO"
+  console_level: "INFO"
+  enable_json: true  # JSON for analysis
+  enable_colors: true
+  rotation_when: "midnight"
+  rotation_interval: 1
+  backup_count: 30  # Keep 30 days
+
+exchange:
+  name: "binance"
+  api_key: "${BINANCE_API_KEY}"
+  api_secret: "${BINANCE_API_SECRET}"
+  testnet: true
+  timeout: 30
+  rate_limit_per_second: 10
+
+risk:
+  max_position_size_pct: 0.03  # 3% per trade
+  max_total_exposure_pct: 0.25  # 25% total
+  max_daily_loss_pct: 0.02  # 2% daily loss limit
+  max_slippage_pct: 0.005  # 0.5% max slippage
+  min_liquidity_ratio: 0.01
+  var_confidence: 0.95
+  enable_emergency_stop: true
