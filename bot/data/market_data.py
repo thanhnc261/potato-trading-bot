@@ -307,7 +307,7 @@ class MarketDataStream:
 
         # Enable testnet if supported
         if self.testnet and hasattr(exchange_class, "set_sandbox_mode"):
-            options: Dict[str, Any] = config["options"]  # type: ignore
+            options: Dict[str, Any] = config["options"]
             options["sandboxMode"] = True
 
         return exchange_class(config)

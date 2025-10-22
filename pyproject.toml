@@ -118,6 +118,8 @@ module = [
     "feedparser.*",
     "stable_baselines3.*",
     "pyarrow.*",
+    "pandas.*",
+    "structlog.*",
 ]
 ignore_missing_imports = true
 
