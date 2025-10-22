@@ -173,7 +173,7 @@ class MarketDataBuffer:
 
             # Return as DataFrame
             table = self._tables[symbol]
-            df = table.to_pandas()
+            df: pd.DataFrame = table.to_pandas()
             return df.tail(limit)
 
     async def get_range(
@@ -280,7 +280,7 @@ class MarketDataStream:
         # Background tasks
         self._stream_task: Optional[asyncio.Task] = None
         self._heartbeat_task: Optional[asyncio.Task] = None
-        self._last_message_time = 0
+        self._last_message_time: float = 0.0
 
         # Shutdown flag
         self._shutdown = False
@@ -296,7 +296,7 @@ class MarketDataStream:
         """Create exchange instance with configuration"""
         exchange_class = getattr(ccxt, self.exchange_id)
 
-        config = {
+        config: Dict[str, Any] = {
             "enableRateLimit": True,
             "options": {"defaultType": "spot"},
         }
@@ -307,7 +307,8 @@ class MarketDataStream:
 
         # Enable testnet if supported
         if self.testnet and hasattr(exchange_class, "set_sandbox_mode"):
-            config["options"]["sandboxMode"] = True
+            options: Dict[str, Any] = config["options"]  # type: ignore
+            options["sandboxMode"] = True
 
         return exchange_class(config)
 
@@ -496,10 +497,12 @@ class MarketDataStream:
                 for symbol in symbols_list:
                     try:
                         # Check if exchange supports WebSocket
-                        if hasattr(self._exchange, "watch_ticker"):
+                        if self._exchange is not None and hasattr(self._exchange, "watch_ticker"):
                             ticker = await self._exchange.watch_ticker(symbol)
-                        else:
+                        elif self._exchange is not None:
                             ticker = await self._exchange.fetch_ticker(symbol)
+                        else:
+                            continue
 
                         # Normalize and process tick
                         tick = self._normalize_tick(ticker, symbol)

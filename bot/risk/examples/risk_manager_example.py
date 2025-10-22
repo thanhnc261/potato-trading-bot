@@ -12,6 +12,7 @@ This example demonstrates:
 import asyncio
 from datetime import time as datetime_time
 from decimal import Decimal
+from typing import Any, Dict, List
 
 from bot.config.models import RiskConfig
 from bot.execution.adapters.binance import BinanceAdapter
@@ -176,7 +177,7 @@ async def main():
     print("=" * 60)
 
     # 14. Validate multiple trades
-    trades = [
+    trades: List[Dict[str, Any]] = [
         {"symbol": "BTCUSDT", "side": OrderSide.BUY, "quantity": Decimal("0.1")},
         {"symbol": "ETHUSDT", "side": OrderSide.BUY, "quantity": Decimal("1.0")},
         {"symbol": "ADAUSDT", "side": OrderSide.SELL, "quantity": Decimal("1000")},
@@ -187,9 +188,9 @@ async def main():
     # Validate all trades concurrently
     validation_tasks = [
         risk_manager.validate_trade(
-            symbol=trade["symbol"],
-            side=trade["side"],
-            quantity=trade["quantity"],
+            symbol=str(trade["symbol"]),
+            side=OrderSide(trade["side"]),
+            quantity=Decimal(trade["quantity"]),
         )
         for trade in trades
     ]
@@ -200,8 +201,9 @@ async def main():
     print(f"\nValidation Results:")
     for i, result in enumerate(results):
         trade = trades[i]
+        side = OrderSide(trade["side"])
         status = "✓ APPROVED" if result.approved else "✗ REJECTED"
-        print(f"  {i+1}. {trade['symbol']} {trade['side'].value} {trade['quantity']}: {status}")
+        print(f"  {i+1}. {trade['symbol']} {side.value} {trade['quantity']}: {status}")
 
         if not result.approved:
             failed = result.get_failed_checks()

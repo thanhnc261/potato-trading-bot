@@ -238,7 +238,8 @@ def get_logger(name: Optional[str] = None) -> structlog.stdlib.BoundLogger:
         if frame and frame.f_back:
             name = frame.f_back.f_globals.get("__name__", "bot")
 
-    return structlog.get_logger(name or "bot")
+    logger: structlog.stdlib.BoundLogger = structlog.get_logger(name or "bot")
+    return logger
 
 
 def get_trade_logger() -> structlog.stdlib.BoundLogger:
@@ -248,7 +249,8 @@ def get_trade_logger() -> structlog.stdlib.BoundLogger:
     Returns:
         Trade logger for logging trade-specific events
     """
-    return structlog.get_logger("bot.trades")
+    logger: structlog.stdlib.BoundLogger = structlog.get_logger("bot.trades")
+    return logger
 
 
 class CorrelationContext:
@@ -269,7 +271,7 @@ class CorrelationContext:
             correlation_id: Optional correlation ID. If None, generates a new UUID.
         """
         self.correlation_id = correlation_id or str(uuid.uuid4())
-        self.token = None
+        self.token: Optional[contextvars.Token[Optional[str]]] = None
 
     def __enter__(self) -> str:
         """

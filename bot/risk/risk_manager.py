@@ -261,15 +261,14 @@ class RiskManager:
             check_results: List[RiskCheckResult] = []
             for result in results:
                 if isinstance(result, Exception):
-                    check_results.append(
-                        RiskCheckResult(
-                            check_name="exception_handler",
-                            status=RiskCheckStatus.FAILED,
-                            passed=False,
-                            message=f"Check failed with exception: {str(result)}",
-                            details={"exception": str(result)},
-                        )
+                    exception_result = RiskCheckResult(
+                        check_name="exception_handler",
+                        status=RiskCheckStatus.FAILED,
+                        passed=False,
+                        message=f"Check failed with exception: {str(result)}",
+                        details={"exception": str(result)},
                     )
+                    check_results.append(exception_result)
                 else:
                     check_results.append(result)
 
@@ -642,13 +641,13 @@ class RiskManager:
 
             for pos_symbol, pos_value in self._open_positions.items():
                 if pos_symbol in self._correlation_matrix.columns:
-                    correlation = self._correlation_matrix.loc[symbol, pos_symbol]
+                    correlation = float(self._correlation_matrix.loc[symbol, pos_symbol])
                     if abs(correlation) > 0.7:  # High correlation threshold
-                        correlated_exposure += pos_value
+                        correlated_exposure += Decimal(str(pos_value))
                         high_correlations.append(
                             {
                                 "symbol": pos_symbol,
-                                "correlation": float(correlation),
+                                "correlation": correlation,
                                 "value": str(pos_value),
                             }
                         )
@@ -779,7 +778,7 @@ class RiskManager:
         # Fetch fresh data using ccxt-style fetch_order_book
         # Note: ExchangeInterface may need to expose this method
         # For now, we'll create a simplified implementation
-        order_book = {
+        order_book: dict[str, list] = {
             "bids": [],
             "asks": [],
         }

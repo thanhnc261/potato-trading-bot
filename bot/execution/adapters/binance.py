@@ -59,7 +59,7 @@ class RateLimiter:
         """
         self.max_requests = max_requests
         self.time_window = time_window
-        self.tokens = max_requests
+        self.tokens: float = float(max_requests)
         self.last_update = time.time()
         self._lock = asyncio.Lock()
 
@@ -288,7 +288,8 @@ class BinanceAdapter(ExchangeInterface):
                     # Handle successful response
                     if response.status == 200:
                         try:
-                            return await response.json()
+                            result: dict[Any, Any] = await response.json()
+                            return result
                         except Exception as e:
                             raise ExchangeAPIError(
                                 f"Failed to parse response: {str(e)}",
@@ -688,6 +689,8 @@ class BinanceAdapter(ExchangeInterface):
             updated_at=(
                 datetime.fromtimestamp(data["updateTime"] / 1000) if "updateTime" in data else None
             ),
+            commission=None,  # Commission info not in order response, available in fills
+            commission_asset=None,
         )
 
     def _parse_order_type(self, binance_type: str) -> OrderType:
