@@ -1,0 +1,165 @@
+# Risk Management Configuration
+#
+# This file contains all configurable risk parameters for the trading bot.
+# Adjust these values based on your risk tolerance and trading strategy.
+
+risk:
+  # Position Size Limits
+  # --------------------
+  # Maximum position size as a percentage of total portfolio value
+  # Default: 0.03 (3% per trade)
+  # Range: 0.001 - 1.0 (0.1% - 100%)
+  max_position_size_pct: 0.03
+
+  # Maximum total exposure across all positions as a percentage of portfolio
+  # Default: 0.25 (25% total exposure)
+  # Range: 0.001 - 1.0 (0.1% - 100%)
+  max_total_exposure_pct: 0.25
+
+  # Stop-Loss Thresholds
+  # --------------------
+  # Maximum daily loss as a percentage of portfolio before stopping trading
+  # Default: 0.02 (2% daily loss limit)
+  # Range: 0.001 - 0.5 (0.1% - 50%)
+  max_daily_loss_pct: 0.02
+
+  # Slippage & Liquidity
+  # --------------------
+  # Maximum acceptable slippage percentage
+  # Default: 0.005 (0.5% slippage)
+  # Range: 0.0 - 0.1 (0% - 10%)
+  max_slippage_pct: 0.005
+
+  # Minimum liquidity ratio: position size must be less than this % of daily volume
+  # Default: 0.01 (position < 1% of daily volume)
+  # Range: 0.001 - 1.0 (0.1% - 100%)
+  min_liquidity_ratio: 0.01
+
+  # Value at Risk (VaR)
+  # -------------------
+  # Confidence level for VaR calculations
+  # Default: 0.95 (95% confidence)
+  # Range: 0.5 - 0.99 (50% - 99%)
+  var_confidence: 0.95
+
+  # Emergency Controls
+  # ------------------
+  # Enable emergency stop system that halts all trading on severe losses
+  # Default: true
+  enable_emergency_stop: true
+
+# Time-Based Trading Restrictions
+# --------------------------------
+# Configure when the bot is allowed to trade
+# These settings help avoid low-liquidity periods and manage operational hours
+
+trading_hours:
+  # Trading start time (UTC)
+  # Format: HH:MM (24-hour)
+  # Default: "00:00" (midnight UTC)
+  start_time: "00:00"
+
+  # Trading end time (UTC)
+  # Format: HH:MM (24-hour)
+  # Default: "23:59" (end of day UTC)
+  end_time: "23:59"
+
+  # Allowed trading days (0=Monday, 6=Sunday)
+  # Default: [0, 1, 2, 3, 4, 5, 6] (all days)
+  # Example for weekdays only: [0, 1, 2, 3, 4]
+  trading_days: [0, 1, 2, 3, 4, 5, 6]
+
+# ATR-Based Position Sizing
+# --------------------------
+# Dynamic position sizing based on volatility (Average True Range)
+
+atr_position_sizing:
+  # Enable ATR-based position sizing
+  # Default: true
+  enabled: true
+
+  # Risk per trade as percentage of portfolio for ATR calculation
+  # Default: 0.01 (1% risk per trade)
+  # Range: 0.001 - 0.05 (0.1% - 5%)
+  risk_per_trade_pct: 0.01
+
+  # ATR multiplier for stop-loss distance
+  # Default: 2.0 (2x ATR)
+  # Range: 0.5 - 5.0
+  atr_multiplier: 2.0
+
+  # ATR period (number of bars for calculation)
+  # Default: 14
+  # Range: 5 - 50
+  atr_period: 14
+
+# Correlation Risk Management
+# ----------------------------
+# Prevent over-concentration in correlated assets
+
+correlation_management:
+  # Enable correlation exposure checks
+  # Default: true
+  enabled: true
+
+  # Correlation threshold for identifying highly correlated assets
+  # Assets with correlation above this value are considered highly correlated
+  # Default: 0.7 (70% correlation)
+  # Range: 0.5 - 0.99
+  high_correlation_threshold: 0.7
+
+  # Maximum correlated exposure as percentage of portfolio
+  # Default: 0.175 (17.5%, or 70% of max_total_exposure_pct)
+  # Range: 0.001 - 1.0
+  max_correlated_exposure_pct: 0.175
+
+  # How often to update correlation matrix (in seconds)
+  # Default: 3600 (1 hour)
+  # Range: 300 - 86400 (5 minutes - 24 hours)
+  correlation_update_interval: 3600
+
+  # Minimum number of data points required for correlation calculation
+  # Default: 20
+  # Range: 10 - 100
+  min_data_points: 20
+
+# Advanced Risk Settings
+# -----------------------
+
+advanced:
+  # Cache TTL for order book and volume data (in seconds)
+  # Default: 60 (1 minute)
+  # Range: 10 - 300 (10 seconds - 5 minutes)
+  cache_ttl: 60
+
+  # Maximum price history length per symbol
+  # Default: 1000
+  # Range: 100 - 10000
+  max_price_history: 1000
+
+  # Order book depth to analyze for slippage
+  # Default: 50 (top 50 levels)
+  # Range: 10 - 100
+  order_book_depth: 50
+
+# Example Conservative Configuration
+# -----------------------------------
+# Uncomment this section to use more conservative risk parameters
+
+# risk:
+#   max_position_size_pct: 0.02       # 2% per trade (vs default 3%)
+#   max_total_exposure_pct: 0.15      # 15% total (vs default 25%)
+#   max_daily_loss_pct: 0.01          # 1% daily limit (vs default 2%)
+#   max_slippage_pct: 0.003           # 0.3% slippage (vs default 0.5%)
+#   min_liquidity_ratio: 0.005        # 0.5% of volume (vs default 1%)
+
+# Example Aggressive Configuration
+# ---------------------------------
+# Uncomment this section to use more aggressive risk parameters
+
+# risk:
+#   max_position_size_pct: 0.05       # 5% per trade (vs default 3%)
+#   max_total_exposure_pct: 0.40      # 40% total (vs default 25%)
+#   max_daily_loss_pct: 0.05          # 5% daily limit (vs default 2%)
+#   max_slippage_pct: 0.01            # 1% slippage (vs default 0.5%)
+#   min_liquidity_ratio: 0.02         # 2% of volume (vs default 1%)
