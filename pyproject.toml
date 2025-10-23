@@ -5,7 +5,7 @@ description = "AI-enhanced cryptocurrency trading bot with multi-agent LLM syste
 authors = [{name = "Trading Bot Team"}]
 requires-python = ">=3.11,<3.14"
 readme = "README.md"
-license = {text = "Proprietary"}
+license = {text = "All Rights Reserved"}
 
 dependencies = [
     "fastapi>=0.104.0",
@@ -57,6 +57,14 @@ bot = "bot.cli:app"
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["bot*"]
+exclude = ["tests*", "docs*", "examples*"]
+
+[tool.setuptools.package-data]
+bot = ["py.typed"]
 
 [tool.black]
 line-length = 100
