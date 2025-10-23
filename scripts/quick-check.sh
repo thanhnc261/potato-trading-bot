@@ -13,11 +13,19 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Activate venv if it exists
+if [ -f "venv/bin/activate" ]; then
+    source venv/bin/activate
+    PYTHON="python"
+else
+    PYTHON="python3"
+fi
+
 FAILED=0
 
 # Black
 echo "1️⃣  Black formatting..."
-if python3 -m black --check bot/ tests/ --quiet; then
+if $PYTHON -m black --check bot/ tests/ --quiet; then
     echo -e "${GREEN}✅ Black${NC}"
 else
     echo -e "${RED}❌ Black${NC}"
@@ -26,7 +34,7 @@ fi
 
 # Ruff
 echo "2️⃣  Ruff linting..."
-if python3 -m ruff check bot/ tests/ --quiet; then
+if $PYTHON -m ruff check bot/ tests/ --quiet; then
     echo -e "${GREEN}✅ Ruff${NC}"
 else
     echo -e "${RED}❌ Ruff${NC}"
@@ -35,7 +43,7 @@ fi
 
 # mypy
 echo "3️⃣  Type checking..."
-if python3 -m mypy bot/ --no-error-summary 2>/dev/null; then
+if $PYTHON -m mypy bot/ --no-error-summary 2>/dev/null; then
     echo -e "${GREEN}✅ mypy${NC}"
 else
     echo -e "${RED}❌ mypy${NC}"

@@ -1,4 +1,8 @@
-.PHONY: help install dev clean lint typecheck test ci run-paper run-dev backtest
+.PHONY: help venv install dev clean lint typecheck test ci run-paper run-dev backtest
+
+# Detect Python command - use venv if available
+PYTHON := $(shell if [ -f venv/bin/python ]; then echo venv/bin/python; else echo python3; fi)
+PIP := $(shell if [ -f venv/bin/pip ]; then echo venv/bin/pip; else echo pip; fi)
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -6,11 +10,30 @@ help: ## Show this help message
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install: ## Install production dependencies
-	pip install -e .
+venv: ## Create Python 3.13 virtual environment
+	@if [ ! -d venv ]; then \
+		echo "Creating venv with Python 3.13..."; \
+		if command -v python3.13 >/dev/null 2>&1; then \
+			python3.13 -m venv venv; \
+		elif [ -f /opt/homebrew/bin/python3.13 ]; then \
+			/opt/homebrew/bin/python3.13 -m venv venv; \
+		else \
+			echo "Python 3.13 not found, using python3..."; \
+			python3 -m venv venv; \
+		fi; \
+		echo "Upgrading pip..."; \
+		venv/bin/pip install --upgrade pip setuptools wheel; \
+		echo "✅ Virtual environment created at ./venv"; \
+		echo "Activate with: source venv/bin/activate"; \
+	else \
+		echo "Virtual environment already exists at ./venv"; \
+	fi
 
-dev: ## Install development dependencies
-	pip install -e ".[dev]"
+install: venv ## Install production dependencies
+	$(PIP) install -r requirements.txt
+
+dev: venv ## Install development dependencies
+	$(PIP) install -r requirements.txt -r requirements-dev.txt
 
 clean: ## Remove build artifacts and cache
 	rm -rf build/
@@ -23,35 +46,50 @@ clean: ## Remove build artifacts and cache
 	rm -rf htmlcov/
 	rm -f .coverage
 
+clean-venv: ## Remove virtual environment
+	rm -rf venv/
+
 lint: ## Run code formatters and linters
-	black bot/ tests/
-	ruff check --fix bot/ tests/
+	$(PYTHON) -m black bot/ tests/
+	$(PYTHON) -m ruff check --fix bot/ tests/
 
 typecheck: ## Run type checking
-	mypy bot/
+	$(PYTHON) -m mypy bot/
 
-test: ## Run tests
-	pytest tests/ -v
+test: ## Run unit tests only (skip integration)
+	$(PYTHON) -m pytest tests/unit/ -v
+
+test-integration: ## Run integration tests
+	$(PYTHON) -m pytest tests/integration/ -v -m integration
+
+test-all: ## Run all tests (unit + integration)
+	$(PYTHON) -m pytest tests/ -v
 
 test-cov: ## Run tests with coverage
-	pytest tests/ -v --cov=bot --cov-report=html --cov-report=term
+	$(PYTHON) -m pytest tests/unit/ -v --cov=bot --cov-report=html --cov-report=term
 
-ci: lint typecheck test ## Run all CI checks (lint + typecheck + test)
+ci: lint typecheck test ## Run all CI checks (lint + typecheck + unit tests)
+
+quick-check: ## Run quick checks (lint + typecheck only)
+	@./scripts/quick-check.sh
+
+full-check: ## Run full checks (lint + typecheck + unit tests)
+	@./scripts/check.sh
 
 run-paper: ## Run bot in paper trading mode
-	python -m bot.cli run --profile paper
+	$(PYTHON) -m bot.cli run --profile paper
 
 run-dev: ## Run bot in development mode
-	python -m bot.cli run --profile dev
+	$(PYTHON) -m bot.cli run --profile dev
 
 backtest: ## Run backtest (usage: make backtest SYMBOL=BTCUSDT)
-	python -m bot.cli backtest --symbol $(or $(SYMBOL),BTCUSDT) --start 2021-01-01 --end 2022-01-01
+	$(PYTHON) -m bot.cli backtest --symbol $(or $(SYMBOL),BTCUSDT) --start 2021-01-01 --end 2022-01-01
 
 symbols: ## List available trading symbols
-	python -m bot.cli symbols
+	$(PYTHON) -m bot.cli symbols
 
 validate-config: ## Validate configuration
-	python -m bot.cli config validate --profile $(or $(PROFILE),paper)
+	$(PYTHON) -m bot.cli config validate --profile $(or $(PROFILE),paper)
 
 docker-build: ## Build Docker image
 	docker build -t ai-trading-bot:latest .

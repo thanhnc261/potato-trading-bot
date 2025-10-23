@@ -1,5 +1,22 @@
 # Development Scripts
 
+## Setup
+
+First, create and activate the virtual environment:
+
+```bash
+# Create venv with Python 3.13 (or available Python)
+make venv
+
+# Activate venv
+source venv/bin/activate
+
+# Install dependencies
+make dev
+```
+
+The scripts automatically detect and use the venv if available.
+
 ## Pre-Commit Check Scripts
 
 These scripts help ensure your code passes all CI checks before committing.
