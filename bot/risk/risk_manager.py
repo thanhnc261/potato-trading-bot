@@ -12,11 +12,11 @@ This module provides:
 """
 
 import asyncio
-from datetime import datetime, time as datetime_time, timezone
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from datetime import time as datetime_time
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
-from dataclasses import dataclass, field
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,6 @@ from structlog import get_logger
 from bot.config.models import RiskConfig
 from bot.core.logging_config import CorrelationContext
 from bot.interfaces.exchange import ExchangeInterface, OrderSide
-
 
 logger = get_logger(__name__)
 
@@ -58,11 +57,11 @@ class RiskCheckResult:
     status: RiskCheckStatus
     passed: bool
     message: str
-    details: Dict = field(default_factory=dict)
-    value: Optional[float] = None
-    threshold: Optional[float] = None
+    details: dict = field(default_factory=dict)
+    value: float | None = None
+    threshold: float | None = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for logging."""
         return {
             "check_name": self.check_name,
@@ -92,7 +91,7 @@ class TradeValidationResult:
     """
 
     approved: bool
-    results: List[RiskCheckResult]
+    results: list[RiskCheckResult]
     correlation_id: str
     timestamp: datetime
     symbol: str
@@ -100,15 +99,15 @@ class TradeValidationResult:
     quantity: Decimal
     estimated_value: Decimal
 
-    def get_failed_checks(self) -> List[RiskCheckResult]:
+    def get_failed_checks(self) -> list[RiskCheckResult]:
         """Get list of failed checks."""
         return [r for r in self.results if not r.passed]
 
-    def get_warnings(self) -> List[RiskCheckResult]:
+    def get_warnings(self) -> list[RiskCheckResult]:
         """Get list of warning checks."""
         return [r for r in self.results if r.status == RiskCheckStatus.WARNING]
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert to dictionary for logging."""
         return {
             "approved": self.approved,
@@ -158,24 +157,24 @@ class RiskManager:
         self.current_portfolio_value = initial_portfolio_value
 
         # Portfolio tracking
-        self._open_positions: Dict[str, Decimal] = {}  # symbol -> position_value
+        self._open_positions: dict[str, Decimal] = {}  # symbol -> position_value
         self._daily_pnl: Decimal = Decimal(0)
-        self._daily_pnl_reset_date = datetime.now(timezone.utc).date()
+        self._daily_pnl_reset_date = datetime.now(UTC).date()
 
         # Correlation tracking
-        self._price_history: Dict[str, List[float]] = {}  # symbol -> price history
-        self._correlation_matrix: Optional[pd.DataFrame] = None
-        self._last_correlation_update = datetime.now(timezone.utc)
+        self._price_history: dict[str, list[float]] = {}  # symbol -> price history
+        self._correlation_matrix: pd.DataFrame | None = None
+        self._last_correlation_update = datetime.now(UTC)
 
         # Time restrictions
         self._trading_hours_start = datetime_time(0, 0)  # Default: trade 24/7
         self._trading_hours_end = datetime_time(23, 59)
-        self._trading_days: Set[int] = {0, 1, 2, 3, 4, 5, 6}  # All days by default
+        self._trading_days: set[int] = {0, 1, 2, 3, 4, 5, 6}  # All days by default
 
         # Caching for performance
         self._cache_ttl = 60  # Cache TTL in seconds
-        self._order_book_cache: Dict[str, Tuple[Dict, datetime]] = {}
-        self._volume_cache: Dict[str, Tuple[float, datetime]] = {}
+        self._order_book_cache: dict[str, tuple[dict, datetime]] = {}
+        self._volume_cache: dict[str, tuple[float, datetime]] = {}
 
         logger.info(
             "risk_manager_initialized",
@@ -189,7 +188,7 @@ class RiskManager:
         self,
         start_time: datetime_time,
         end_time: datetime_time,
-        trading_days: Optional[Set[int]] = None,
+        trading_days: set[int] | None = None,
     ) -> None:
         """
         Configure time-based trading restrictions.
@@ -216,7 +215,7 @@ class RiskManager:
         symbol: str,
         side: OrderSide,
         quantity: Decimal,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
     ) -> TradeValidationResult:
         """
         Perform comprehensive pre-trade validation.
@@ -258,9 +257,9 @@ class RiskManager:
             )
 
             # Convert exceptions to failed checks
-            check_results: List[RiskCheckResult] = []
+            check_results: list[RiskCheckResult] = []
             for result in results:
-                if isinstance(result, Exception):
+                if isinstance(result, BaseException):
                     exception_result = RiskCheckResult(
                         check_name="exception_handler",
                         status=RiskCheckStatus.FAILED,
@@ -269,7 +268,7 @@ class RiskManager:
                         details={"exception": str(result)},
                     )
                     check_results.append(exception_result)
-                else:
+                elif isinstance(result, RiskCheckResult):
                     check_results.append(result)
 
             # Determine overall approval
@@ -279,7 +278,7 @@ class RiskManager:
                 approved=approved,
                 results=check_results,
                 correlation_id=correlation_id,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 symbol=symbol,
                 side=side,
                 quantity=quantity,
@@ -308,7 +307,7 @@ class RiskManager:
         Returns:
             RiskCheckResult for time restrictions
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         current_time = now.time()
         current_day = now.weekday()
 
@@ -579,7 +578,7 @@ class RiskManager:
             RiskCheckResult for portfolio stop-loss
         """
         # Reset daily P&L if date has changed
-        current_date = datetime.now(timezone.utc).date()
+        current_date = datetime.now(UTC).date()
         if current_date != self._daily_pnl_reset_date:
             self._daily_pnl = Decimal(0)
             self._daily_pnl_reset_date = current_date
@@ -641,7 +640,8 @@ class RiskManager:
 
             for pos_symbol, pos_value in self._open_positions.items():
                 if pos_symbol in self._correlation_matrix.columns:
-                    correlation = float(self._correlation_matrix.loc[symbol, pos_symbol])
+                    corr_value = self._correlation_matrix.loc[symbol, pos_symbol]
+                    correlation = float(corr_value) if not pd.isna(corr_value) else 0.0
                     if abs(correlation) > 0.7:  # High correlation threshold
                         correlated_exposure += Decimal(str(pos_value))
                         high_correlations.append(
@@ -758,7 +758,7 @@ class RiskManager:
             # Fallback to conservative fixed percentage
             return self.current_portfolio_value * Decimal("0.01")
 
-    async def _get_order_book(self, symbol: str, depth: int = 50) -> Dict:
+    async def _get_order_book(self, symbol: str, depth: int = 50) -> dict:
         """
         Get order book with caching.
 
@@ -772,7 +772,7 @@ class RiskManager:
         # Check cache
         if symbol in self._order_book_cache:
             cached_book, cache_time = self._order_book_cache[symbol]
-            if (datetime.now(timezone.utc) - cache_time).total_seconds() < self._cache_ttl:
+            if (datetime.now(UTC) - cache_time).total_seconds() < self._cache_ttl:
                 return cached_book
 
         # Fetch fresh data using ccxt-style fetch_order_book
@@ -784,7 +784,7 @@ class RiskManager:
         }
 
         # Cache the result
-        self._order_book_cache[symbol] = (order_book, datetime.now(timezone.utc))
+        self._order_book_cache[symbol] = (order_book, datetime.now(UTC))
 
         return order_book
 
@@ -801,7 +801,7 @@ class RiskManager:
         # Check cache
         if symbol in self._volume_cache:
             cached_volume, cache_time = self._volume_cache[symbol]
-            if (datetime.now(timezone.utc) - cache_time).total_seconds() < self._cache_ttl:
+            if (datetime.now(UTC) - cache_time).total_seconds() < self._cache_ttl:
                 return cached_volume
 
         # Fetch fresh volume data
@@ -810,7 +810,7 @@ class RiskManager:
         volume = 1000000.0  # Placeholder
 
         # Cache the result
-        self._volume_cache[symbol] = (volume, datetime.now(timezone.utc))
+        self._volume_cache[symbol] = (volume, datetime.now(UTC))
 
         return volume
 
@@ -822,7 +822,7 @@ class RiskManager:
         up-to-date correlation data.
         """
         # Update only if enough time has passed
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if (now - self._last_correlation_update).total_seconds() < 3600:  # Update hourly
             return
 
@@ -913,7 +913,7 @@ class RiskManager:
         if len(self._price_history[symbol]) > 1000:
             self._price_history[symbol] = self._price_history[symbol][-1000:]
 
-    def get_risk_metrics(self) -> Dict:
+    def get_risk_metrics(self) -> dict:
         """
         Get current risk metrics summary.
 

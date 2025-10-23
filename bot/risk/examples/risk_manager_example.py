@@ -12,7 +12,7 @@ This example demonstrates:
 import asyncio
 from datetime import time as datetime_time
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 
 from bot.config.models import RiskConfig
 from bot.execution.adapters.binance import BinanceAdapter
@@ -86,14 +86,14 @@ async def main():
     )
 
     # 6. Check validation result
-    print(f"\nValidation Result:")
+    print("\nValidation Result:")
     print(f"  Approved: {validation_result.approved}")
     print(f"  Correlation ID: {validation_result.correlation_id}")
     print(f"  Estimated Value: ${validation_result.estimated_value:,.2f}")
     print(f"  Timestamp: {validation_result.timestamp}")
 
     # 7. Display individual check results
-    print(f"\nIndividual Checks:")
+    print("\nIndividual Checks:")
     for check in validation_result.results:
         status_symbol = "✓" if check.passed else "✗"
         print(f"  {status_symbol} {check.check_name}: {check.message}")
@@ -102,11 +102,11 @@ async def main():
 
     # 8. Handle failed checks
     if not validation_result.approved:
-        print(f"\n⚠ Trade rejected! Failed checks:")
+        print("\n⚠ Trade rejected! Failed checks:")
         for failed_check in validation_result.get_failed_checks():
             print(f"  - {failed_check.check_name}: {failed_check.message}")
     else:
-        print(f"\n✓ Trade approved!")
+        print("\n✓ Trade approved!")
 
     # 9. Display warnings (if any)
     warnings = validation_result.get_warnings()
@@ -124,7 +124,7 @@ async def main():
     for i in range(20):
         price = 50000.0 + (i * 100)  # Simulated prices
         risk_manager.update_price_history(symbol, price)
-    print(f"✓ Added 20 price points")
+    print("✓ Added 20 price points")
 
     # 11. Calculate dynamic position size using ATR
     recommended_size = await risk_manager.calculate_position_size_atr(
@@ -133,10 +133,10 @@ async def main():
         atr_multiplier=2.0,  # 2x ATR for stop-loss
     )
 
-    print(f"\nATR-Based Position Sizing:")
+    print("\nATR-Based Position Sizing:")
     print(f"  Recommended quantity: {recommended_size:.4f} {symbol.split('USDT')[0]}")
-    print(f"  Risk per trade: 1% of portfolio")
-    print(f"  ATR multiplier: 2.0x")
+    print("  Risk per trade: 1% of portfolio")
+    print("  ATR multiplier: 2.0x")
 
     print("\n" + "=" * 60)
     print("Example 3: Portfolio Tracking")
@@ -147,20 +147,20 @@ async def main():
 
     # Open first position
     risk_manager.update_position("BTCUSDT", Decimal("5000"), add=True)
-    print(f"✓ Opened position: BTCUSDT ($5,000)")
+    print("✓ Opened position: BTCUSDT ($5,000)")
 
     # Open second position
     risk_manager.update_position("ETHUSDT", Decimal("3000"), add=True)
-    print(f"✓ Opened position: ETHUSDT ($3,000)")
+    print("✓ Opened position: ETHUSDT ($3,000)")
 
     # Update portfolio value (simulated P&L)
     risk_manager.update_portfolio_value(Decimal("102000"))  # +$2,000 profit
-    print(f"✓ Portfolio value updated: $102,000 (+$2,000)")
+    print("✓ Portfolio value updated: $102,000 (+$2,000)")
 
     # 13. Get risk metrics
     metrics = risk_manager.get_risk_metrics()
 
-    print(f"\nCurrent Risk Metrics:")
+    print("\nCurrent Risk Metrics:")
     print(f"  Portfolio Value: {metrics['portfolio_value']}")
     print(f"  Daily P&L: {metrics['daily_pnl']}")
     print(f"  Open Positions: {metrics['open_positions']}")
@@ -168,7 +168,7 @@ async def main():
     print(f"  Exposure %: {metrics['exposure_pct']}")
     print(f"  Max Exposure Limit: {metrics['max_exposure_pct']}")
 
-    print(f"\nPosition Details:")
+    print("\nPosition Details:")
     for symbol, value in metrics["positions"].items():
         print(f"  - {symbol}: ${value}")
 
@@ -177,7 +177,7 @@ async def main():
     print("=" * 60)
 
     # 14. Validate multiple trades
-    trades: List[Dict[str, Any]] = [
+    trades: list[dict[str, Any]] = [
         {"symbol": "BTCUSDT", "side": OrderSide.BUY, "quantity": Decimal("0.1")},
         {"symbol": "ETHUSDT", "side": OrderSide.BUY, "quantity": Decimal("1.0")},
         {"symbol": "ADAUSDT", "side": OrderSide.SELL, "quantity": Decimal("1000")},
@@ -198,7 +198,7 @@ async def main():
     results = await asyncio.gather(*validation_tasks)
 
     # Display results
-    print(f"\nValidation Results:")
+    print("\nValidation Results:")
     for i, result in enumerate(results):
         trade = trades[i]
         side = OrderSide(trade["side"])
@@ -213,7 +213,7 @@ async def main():
     approved_count = sum(1 for r in results if r.approved)
     rejected_count = len(results) - approved_count
 
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  Total trades validated: {len(results)}")
     print(f"  Approved: {approved_count}")
     print(f"  Rejected: {rejected_count}")
@@ -240,7 +240,7 @@ async def main():
         quantity=Decimal("0.1"),
     )
 
-    print(f"\nAttempting new trade after daily loss limit breach:")
+    print("\nAttempting new trade after daily loss limit breach:")
     print(f"  Approved: {validation.approved}")
 
     # Find the stop-loss check
@@ -253,7 +253,7 @@ async def main():
         print(f"  ⚠ {stop_loss_check.message}")
         print(f"  Daily loss: {stop_loss_check.details['daily_loss_pct']}")
         print(f"  Max allowed: {stop_loss_check.details['max_daily_loss_pct']}")
-        print(f"\n  🛑 Emergency stop activated! Trading halted.")
+        print("\n  🛑 Emergency stop activated! Trading halted.")
 
     # Cleanup
     print("\n" + "=" * 60)

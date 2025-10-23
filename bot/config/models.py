@@ -11,7 +11,6 @@ This module defines type-safe configuration models using Pydantic for:
 
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -156,7 +155,7 @@ class BotConfig(BaseModel):
     version: str = Field(default="0.1.0", description="Bot version")
     environment: str = Field(default="dev", description="Environment", pattern="^(dev|paper|prod)$")
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
-    exchange: Optional[ExchangeConfig] = None
+    exchange: ExchangeConfig | None = None
     risk: RiskConfig = Field(default_factory=RiskConfig)
 
     @field_validator("environment")

@@ -12,24 +12,23 @@ Tests cover:
 
 import asyncio
 from decimal import Decimal
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from aiohttp import ClientError, ClientSession
 
 from bot.execution.adapters.binance import BinanceAdapter, RateLimiter
 from bot.interfaces.exchange import (
-    OrderSide,
-    OrderType,
-    TimeInForce,
-    OrderStatus,
     ExchangeAPIError,
     ExchangeAuthenticationError,
     ExchangeConnectionError,
     InsufficientBalanceError,
     InvalidOrderError,
     OrderNotFoundError,
-    RateLimitExceededError,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    TimeInForce,
 )
 
 

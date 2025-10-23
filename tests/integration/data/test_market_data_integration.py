@@ -9,15 +9,15 @@ Skip with: pytest -v -m "not integration"
 """
 
 import asyncio
-import pytest
 import os
 
+import pytest
+
 from bot.data.market_data import (
+    ConnectionState,
     MarketDataManager,
     MarketDataStream,
-    ConnectionState,
 )
-
 
 pytestmark = pytest.mark.integration
 

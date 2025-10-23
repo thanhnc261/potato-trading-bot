@@ -12,10 +12,11 @@ Tests all risk checks:
 - ATR-based position sizing
 """
 
-import asyncio
-from datetime import datetime, time as datetime_time, timezone
+from datetime import UTC, datetime
+from datetime import time as datetime_time
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from bot.config.models import RiskConfig
@@ -81,7 +82,7 @@ class TestTimeRestrictions:
     async def test_trading_outside_hours(self, risk_manager):
         """Test that trading is blocked outside configured hours."""
         # Set restrictive trading hours (impossible to match)
-        current_time = datetime.now(timezone.utc).time()
+        current_time = datetime.now(UTC).time()
         restricted_start = datetime_time(
             (current_time.hour + 1) % 24,
             current_time.minute,
@@ -107,7 +108,7 @@ class TestTimeRestrictions:
     async def test_trading_on_restricted_day(self, risk_manager):
         """Test that trading is blocked on restricted days."""
         # Restrict trading to days that don't include today
-        current_day = datetime.now(timezone.utc).weekday()
+        current_day = datetime.now(UTC).weekday()
         allowed_days = {(current_day + 1) % 7}  # Tomorrow only
 
         risk_manager.set_trading_hours(
@@ -576,7 +577,6 @@ class TestPortfolioTracking:
 
     def test_update_portfolio_value(self, risk_manager):
         """Test portfolio value update."""
-        initial_value = risk_manager.current_portfolio_value
         risk_manager.update_portfolio_value(Decimal("105000"))
 
         assert risk_manager.current_portfolio_value == Decimal("105000")
@@ -657,7 +657,7 @@ class TestResultDataclasses:
             approved=True,
             results=[check_result],
             correlation_id="test-123",
-            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+            timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
             symbol="BTCUSDT",
             side=OrderSide.BUY,
             quantity=Decimal("1.0"),
@@ -692,7 +692,7 @@ class TestResultDataclasses:
             approved=False,
             results=[passed_check, failed_check],
             correlation_id="test-123",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             symbol="BTCUSDT",
             side=OrderSide.BUY,
             quantity=Decimal("1.0"),
@@ -725,7 +725,7 @@ class TestResultDataclasses:
             approved=True,
             results=[passed_check, warning_check],
             correlation_id="test-123",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             symbol="BTCUSDT",
             side=OrderSide.BUY,
             quantity=Decimal("1.0"),

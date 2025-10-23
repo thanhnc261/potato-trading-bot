@@ -6,9 +6,8 @@ It provides a consistent API for interacting with different cryptocurrency excha
 """
 
 from abc import ABC, abstractmethod
-from decimal import Decimal
-from typing import Dict, List, Optional
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -65,22 +64,22 @@ class Order(BaseModel):
     """Representation of an exchange order."""
 
     id: str = Field(..., description="Exchange order ID")
-    client_order_id: Optional[str] = Field(None, description="Client-generated order ID")
+    client_order_id: str | None = Field(None, description="Client-generated order ID")
     symbol: str = Field(..., description="Trading pair symbol (e.g., 'BTCUSDT')")
     side: OrderSide = Field(..., description="Order side (buy/sell)")
     type: OrderType = Field(..., description="Order type")
-    time_in_force: Optional[TimeInForce] = Field(None, description="Time in force")
+    time_in_force: TimeInForce | None = Field(None, description="Time in force")
     quantity: Decimal = Field(..., description="Order quantity")
-    price: Optional[Decimal] = Field(None, description="Order price (None for market orders)")
-    stop_price: Optional[Decimal] = Field(None, description="Stop price for stop orders")
+    price: Decimal | None = Field(None, description="Order price (None for market orders)")
+    stop_price: Decimal | None = Field(None, description="Stop price for stop orders")
     status: OrderStatus = Field(..., description="Current order status")
     filled_quantity: Decimal = Field(Decimal(0), description="Filled quantity")
     remaining_quantity: Decimal = Field(..., description="Remaining quantity")
-    average_price: Optional[Decimal] = Field(None, description="Average fill price")
+    average_price: Decimal | None = Field(None, description="Average fill price")
     created_at: datetime = Field(..., description="Order creation timestamp")
-    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
-    commission: Optional[Decimal] = Field(None, description="Trading commission")
-    commission_asset: Optional[str] = Field(None, description="Commission asset")
+    updated_at: datetime | None = Field(None, description="Last update timestamp")
+    commission: Decimal | None = Field(None, description="Trading commission")
+    commission_asset: str | None = Field(None, description="Commission asset")
 
 
 class Trade(BaseModel):
@@ -105,9 +104,9 @@ class AccountInfo(BaseModel):
     can_trade: bool = Field(..., description="Whether trading is enabled")
     can_withdraw: bool = Field(..., description="Whether withdrawals are enabled")
     can_deposit: bool = Field(..., description="Whether deposits are enabled")
-    balances: List[Balance] = Field(default_factory=list, description="Account balances")
-    maker_commission: Optional[Decimal] = Field(None, description="Maker commission rate")
-    taker_commission: Optional[Decimal] = Field(None, description="Taker commission rate")
+    balances: list[Balance] = Field(default_factory=list, description="Account balances")
+    maker_commission: Decimal | None = Field(None, description="Maker commission rate")
+    taker_commission: Decimal | None = Field(None, description="Taker commission rate")
 
 
 class ExchangeInterface(ABC):
@@ -155,7 +154,7 @@ class ExchangeInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_balance(self, asset: Optional[str] = None) -> List[Balance]:
+    async def get_balance(self, asset: str | None = None) -> list[Balance]:
         """
         Get account balance for one or all assets.
 
@@ -177,10 +176,10 @@ class ExchangeInterface(ABC):
         side: OrderSide,
         order_type: OrderType,
         quantity: Decimal,
-        price: Optional[Decimal] = None,
-        stop_price: Optional[Decimal] = None,
+        price: Decimal | None = None,
+        stop_price: Decimal | None = None,
         time_in_force: TimeInForce = TimeInForce.GTC,
-        client_order_id: Optional[str] = None,
+        client_order_id: str | None = None,
     ) -> Order:
         """
         Create a new order on the exchange.
@@ -241,7 +240,7 @@ class ExchangeInterface(ABC):
         pass
 
     @abstractmethod
-    async def get_open_orders(self, symbol: Optional[str] = None) -> List[Order]:
+    async def get_open_orders(self, symbol: str | None = None) -> list[Order]:
         """
         Get all open orders for a symbol or all symbols.
 
@@ -260,10 +259,10 @@ class ExchangeInterface(ABC):
     async def get_order_history(
         self,
         symbol: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 500,
-    ) -> List[Order]:
+    ) -> list[Order]:
         """
         Get historical orders for a symbol.
 
@@ -285,10 +284,10 @@ class ExchangeInterface(ABC):
     async def get_trades(
         self,
         symbol: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 500,
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         """
         Get trade history for a symbol.
 
@@ -355,9 +354,7 @@ class ExchangeAuthenticationError(ExchangeError):
 class ExchangeAPIError(ExchangeError):
     """Raised when API request fails."""
 
-    def __init__(
-        self, message: str, status_code: Optional[int] = None, response: Optional[Dict] = None
-    ):
+    def __init__(self, message: str, status_code: int | None = None, response: dict | None = None):
         super().__init__(message)
         self.status_code = status_code
         self.response = response

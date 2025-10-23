@@ -18,15 +18,14 @@ Architecture:
 
 import asyncio
 import time
-from datetime import datetime, timezone
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional, Set, Callable, Any
-from dataclasses import dataclass, field
-import json
+from typing import Any
 
 import ccxt.async_support as ccxt
-import pyarrow as pa
 import pandas as pd
+import pyarrow as pa
 from structlog import get_logger
 
 logger = get_logger(__name__)
@@ -50,15 +49,15 @@ class MarketTick:
     timestamp: int  # Unix timestamp in milliseconds
     price: float
     volume: float
-    bid: Optional[float] = None
-    ask: Optional[float] = None
-    high: Optional[float] = None
-    low: Optional[float] = None
-    open: Optional[float] = None
-    close: Optional[float] = None
+    bid: float | None = None
+    ask: float | None = None
+    high: float | None = None
+    low: float | None = None
+    open: float | None = None
+    close: float | None = None
     exchange: str = "binance"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for PyArrow serialization"""
         return {
             "symbol": self.symbol,
@@ -111,8 +110,8 @@ class MarketDataBuffer:
             max_size: Maximum number of ticks to store per symbol
         """
         self.max_size = max_size
-        self._buffers: Dict[str, List[Dict[str, Any]]] = {}
-        self._tables: Dict[str, pa.Table] = {}
+        self._buffers: dict[str, list[dict[str, Any]]] = {}
+        self._tables: dict[str, pa.Table] = {}
         self._lock = asyncio.Lock()
 
         logger.info("market_data_buffer_initialized", max_size=max_size)
@@ -152,7 +151,7 @@ class MarketDataBuffer:
         if symbol in self._buffers and self._buffers[symbol]:
             self._tables[symbol] = pa.Table.from_pylist(self._buffers[symbol], schema=self.SCHEMA)
 
-    async def get_latest(self, symbol: str, limit: int = 100) -> Optional[pd.DataFrame]:
+    async def get_latest(self, symbol: str, limit: int = 100) -> pd.DataFrame | None:
         """
         Get latest ticks for a symbol.
 
@@ -176,9 +175,7 @@ class MarketDataBuffer:
             df: pd.DataFrame = table.to_pandas()
             return df.tail(limit)
 
-    async def get_range(
-        self, symbol: str, start_time: int, end_time: int
-    ) -> Optional[pd.DataFrame]:
+    async def get_range(self, symbol: str, start_time: int, end_time: int) -> pd.DataFrame | None:
         """
         Get ticks within a time range.
 
@@ -202,7 +199,7 @@ class MarketDataBuffer:
 
             return filtered.to_pandas() if len(filtered) > 0 else None
 
-    async def clear(self, symbol: Optional[str] = None) -> None:
+    async def clear(self, symbol: str | None = None) -> None:
         """
         Clear buffer data.
 
@@ -237,8 +234,8 @@ class MarketDataStream:
         self,
         exchange_id: str = "binance",
         testnet: bool = True,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
+        api_key: str | None = None,
+        api_secret: str | None = None,
         buffer_size: int = 10000,
         heartbeat_interval: int = 30,
         reconnect_delay: int = 5,
@@ -263,8 +260,8 @@ class MarketDataStream:
 
         # Connection state
         self.state = ConnectionState.DISCONNECTED
-        self._subscribed_symbols: Set[str] = set()
-        self._callbacks: List[Callable[[MarketTick], None]] = []
+        self._subscribed_symbols: set[str] = set()
+        self._callbacks: list[Callable[[MarketTick], None]] = []
 
         # Reconnection settings
         self.heartbeat_interval = heartbeat_interval
@@ -273,13 +270,13 @@ class MarketDataStream:
         self._current_reconnect_delay = reconnect_delay
 
         # Exchange instance
-        self._exchange: Optional[ccxt.Exchange] = None
+        self._exchange: ccxt.Exchange | None = None
         self._api_key = api_key
         self._api_secret = api_secret
 
         # Background tasks
-        self._stream_task: Optional[asyncio.Task] = None
-        self._heartbeat_task: Optional[asyncio.Task] = None
+        self._stream_task: asyncio.Task | None = None
+        self._heartbeat_task: asyncio.Task | None = None
         self._last_message_time: float = 0.0
 
         # Shutdown flag
@@ -296,7 +293,7 @@ class MarketDataStream:
         """Create exchange instance with configuration"""
         exchange_class = getattr(ccxt, self.exchange_id)
 
-        config: Dict[str, Any] = {
+        config: dict[str, Any] = {
             "enableRateLimit": True,
             "options": {"defaultType": "spot"},
         }
@@ -307,7 +304,7 @@ class MarketDataStream:
 
         # Enable testnet if supported
         if self.testnet and hasattr(exchange_class, "set_sandbox_mode"):
-            options: Dict[str, Any] = config["options"]
+            options: dict[str, Any] = config["options"]
             options["sandboxMode"] = True
 
         return exchange_class(config)
@@ -375,7 +372,7 @@ class MarketDataStream:
         self.state = ConnectionState.DISCONNECTED
         logger.info("disconnected", exchange=self.exchange_id)
 
-    async def subscribe(self, symbols: List[str]) -> None:
+    async def subscribe(self, symbols: list[str]) -> None:
         """
         Subscribe to market data for symbols.
 
@@ -401,7 +398,7 @@ class MarketDataStream:
             if not self._stream_task or self._stream_task.done():
                 self._stream_task = asyncio.create_task(self._stream_data())
 
-    async def unsubscribe(self, symbols: List[str]) -> None:
+    async def unsubscribe(self, symbols: list[str]) -> None:
         """
         Unsubscribe from market data for symbols.
 
@@ -445,7 +442,7 @@ class MarketDataStream:
 
         return symbol
 
-    def _normalize_tick(self, raw_data: Dict[str, Any], symbol: str) -> MarketTick:
+    def _normalize_tick(self, raw_data: dict[str, Any], symbol: str) -> MarketTick:
         """
         Normalize raw tick data to standard format.
 
@@ -623,15 +620,15 @@ class MarketDataManager:
 
     def __init__(self):
         """Initialize market data manager"""
-        self._streams: Dict[str, MarketDataStream] = {}
+        self._streams: dict[str, MarketDataStream] = {}
         logger.info("market_data_manager_initialized")
 
     async def add_stream(
         self,
         exchange_id: str,
         testnet: bool = True,
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
+        api_key: str | None = None,
+        api_secret: str | None = None,
     ) -> MarketDataStream:
         """
         Add a new market data stream.
@@ -674,7 +671,7 @@ class MarketDataManager:
             del self._streams[exchange_id]
             logger.info("stream_removed", exchange=exchange_id)
 
-    def get_stream(self, exchange_id: str) -> Optional[MarketDataStream]:
+    def get_stream(self, exchange_id: str) -> MarketDataStream | None:
         """
         Get a market data stream by exchange ID.
 

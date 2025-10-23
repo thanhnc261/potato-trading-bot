@@ -52,7 +52,7 @@ async def basic_streaming_example():
         df = await stream.buffer.get_latest("BTC/USDT", limit=5)
 
         if df is not None:
-            print(f"\nLatest 5 ticks for BTC/USDT:")
+            print("\nLatest 5 ticks for BTC/USDT:")
             print(df[["timestamp", "price", "volume", "bid", "ask"]])
         else:
             print("No data collected yet")

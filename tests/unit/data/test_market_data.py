@@ -13,18 +13,17 @@ Tests cover:
 
 import asyncio
 import time
-from unittest.mock import AsyncMock, MagicMock, patch, Mock
-import pytest
+from unittest.mock import AsyncMock, Mock, patch
 
 import pyarrow as pa
-import pandas as pd
+import pytest
 
 from bot.data.market_data import (
-    MarketTick,
-    MarketDataBuffer,
-    MarketDataStream,
-    MarketDataManager,
     ConnectionState,
+    MarketDataBuffer,
+    MarketDataManager,
+    MarketDataStream,
+    MarketTick,
 )
 
 

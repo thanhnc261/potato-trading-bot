@@ -15,21 +15,22 @@ To run these tests:
 Note: These tests may be slow due to rate limiting and network latency.
 """
 
+import asyncio
 import os
-from decimal import Decimal
-import pytest
 from datetime import datetime, timedelta
+from decimal import Decimal
+
+import pytest
 
 from bot.execution.adapters.binance import BinanceAdapter
 from bot.interfaces.exchange import (
+    ExchangeAPIError,
+    ExchangeAuthenticationError,
     OrderSide,
+    OrderStatus,
     OrderType,
     TimeInForce,
-    OrderStatus,
-    ExchangeAuthenticationError,
-    ExchangeConnectionError,
 )
-
 
 # Skip all tests if API credentials not available
 pytestmark = pytest.mark.skipif(
@@ -332,10 +333,6 @@ class TestBinanceIntegrationErrorHandling:
             await adapter.cancel_order(
                 symbol="BTCUSDT", order_id="99999999999"  # Non-existent order ID
             )
-
-
-# Import asyncio for rate limiting test
-import asyncio
 
 
 if __name__ == "__main__":

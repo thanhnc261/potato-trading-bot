@@ -10,32 +10,31 @@ import asyncio
 import hashlib
 import hmac
 import time
-from decimal import Decimal
-from typing import Dict, List, Optional
 from datetime import datetime
+from decimal import Decimal
+from typing import Any
 from urllib.parse import urlencode
-import structlog
 
 import aiohttp
-from pydantic import ValidationError
+import structlog
 
 from bot.interfaces.exchange import (
-    ExchangeInterface,
     AccountInfo,
     Balance,
-    Order,
-    OrderSide,
-    OrderStatus,
-    OrderType,
-    TimeInForce,
-    Trade,
     ExchangeAPIError,
     ExchangeAuthenticationError,
     ExchangeConnectionError,
+    ExchangeInterface,
     InsufficientBalanceError,
     InvalidOrderError,
+    Order,
     OrderNotFoundError,
+    OrderSide,
+    OrderStatus,
+    OrderType,
     RateLimitExceededError,
+    TimeInForce,
+    Trade,
 )
 
 logger = structlog.get_logger(__name__)
@@ -147,7 +146,7 @@ class BinanceAdapter(ExchangeInterface):
         self.order_limiter = RateLimiter(self.ORDER_RATE_LIMIT, 60.0)
 
         # HTTP session
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
 
         # Logger with context
         self.logger = logger.bind(
@@ -192,7 +191,7 @@ class BinanceAdapter(ExchangeInterface):
             self.session = None
             self.logger.info("binance_disconnected")
 
-    def _generate_signature(self, params: Dict) -> str:
+    def _generate_signature(self, params: dict) -> str:
         """
         Generate HMAC SHA256 signature for authenticated requests.
 
@@ -213,9 +212,9 @@ class BinanceAdapter(ExchangeInterface):
         method: str,
         endpoint: str,
         signed: bool = False,
-        params: Optional[Dict] = None,
+        params: dict | None = None,
         use_order_limiter: bool = False,
-    ) -> Dict:
+    ) -> dict:
         """
         Make HTTP request to Binance API with retries and error handling.
 
@@ -339,7 +338,7 @@ class BinanceAdapter(ExchangeInterface):
                         f"API error: {error_msg}", status_code=response.status, response=error_data
                     )
 
-            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            except (TimeoutError, aiohttp.ClientError) as e:
                 last_exception = e
                 if attempt < self.MAX_RETRIES - 1:
                     self.logger.warning(
@@ -357,7 +356,7 @@ class BinanceAdapter(ExchangeInterface):
             f"Request failed after {self.MAX_RETRIES} attempts: {str(last_exception)}"
         )
 
-    def _sanitize_params(self, params: Dict) -> Dict:
+    def _sanitize_params(self, params: dict) -> dict:
         """
         Remove sensitive data from params for logging.
 
@@ -414,7 +413,7 @@ class BinanceAdapter(ExchangeInterface):
         except Exception as e:
             raise ExchangeAPIError(f"Failed to get account info: {str(e)}")
 
-    async def get_balance(self, asset: Optional[str] = None) -> List[Balance]:
+    async def get_balance(self, asset: str | None = None) -> list[Balance]:
         """Get account balance for specific asset or all assets."""
         account_info = await self.get_account_info()
 
@@ -428,10 +427,10 @@ class BinanceAdapter(ExchangeInterface):
         side: OrderSide,
         order_type: OrderType,
         quantity: Decimal,
-        price: Optional[Decimal] = None,
-        stop_price: Optional[Decimal] = None,
+        price: Decimal | None = None,
+        stop_price: Decimal | None = None,
         time_in_force: TimeInForce = TimeInForce.GTC,
-        client_order_id: Optional[str] = None,
+        client_order_id: str | None = None,
     ) -> Order:
         """Create a new order on Binance."""
         try:
@@ -525,7 +524,7 @@ class BinanceAdapter(ExchangeInterface):
         except Exception as e:
             raise ExchangeAPIError(f"Failed to get order: {str(e)}")
 
-    async def get_open_orders(self, symbol: Optional[str] = None) -> List[Order]:
+    async def get_open_orders(self, symbol: str | None = None) -> list[Order]:
         """Get all open orders."""
         try:
             params = {}
@@ -544,10 +543,10 @@ class BinanceAdapter(ExchangeInterface):
     async def get_order_history(
         self,
         symbol: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 500,
-    ) -> List[Order]:
+    ) -> list[Order]:
         """Get historical orders."""
         try:
             params = {
@@ -572,10 +571,10 @@ class BinanceAdapter(ExchangeInterface):
     async def get_trades(
         self,
         symbol: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
+        start_time: datetime | None = None,
+        end_time: datetime | None = None,
         limit: int = 500,
-    ) -> List[Trade]:
+    ) -> list[Trade]:
         """Get trade history."""
         try:
             params = {
@@ -652,7 +651,7 @@ class BinanceAdapter(ExchangeInterface):
         }
         return mapping.get(status, OrderStatus.OPEN)
 
-    def _parse_order(self, data: Dict) -> Order:
+    def _parse_order(self, data: dict) -> Order:
         """
         Parse Binance order response to Order object.
 
@@ -705,7 +704,7 @@ class BinanceAdapter(ExchangeInterface):
         }
         return mapping.get(binance_type, OrderType.MARKET)
 
-    def _parse_trade(self, data: Dict) -> Trade:
+    def _parse_trade(self, data: dict) -> Trade:
         """
         Parse Binance trade response to Trade object.
 

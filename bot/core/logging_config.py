@@ -14,15 +14,15 @@ import logging
 import logging.handlers
 import sys
 import uuid
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import structlog
 from structlog.types import EventDict, Processor
 
 # Context variable for correlation ID (thread-safe)
-correlation_id_var: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 
 def add_correlation_id(logger: Any, method_name: str, event_dict: EventDict) -> EventDict:
@@ -221,7 +221,7 @@ def setup_logging(
     )
 
 
-def get_logger(name: Optional[str] = None) -> structlog.stdlib.BoundLogger:
+def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     """
     Get a logger instance.
 
@@ -263,7 +263,7 @@ class CorrelationContext:
             # All logs within this context will have the same correlation_id
     """
 
-    def __init__(self, correlation_id: Optional[str] = None):
+    def __init__(self, correlation_id: str | None = None):
         """
         Initialize correlation context.
 
@@ -271,7 +271,7 @@ class CorrelationContext:
             correlation_id: Optional correlation ID. If None, generates a new UUID.
         """
         self.correlation_id = correlation_id or str(uuid.uuid4())
-        self.token: Optional[contextvars.Token[Optional[str]]] = None
+        self.token: Token[str | None] | None = None
 
     def __enter__(self) -> str:
         """
@@ -299,7 +299,7 @@ def set_correlation_id(correlation_id: str) -> None:
     correlation_id_var.set(correlation_id)
 
 
-def get_correlation_id() -> Optional[str]:
+def get_correlation_id() -> str | None:
     """
     Get current correlation ID.
 
