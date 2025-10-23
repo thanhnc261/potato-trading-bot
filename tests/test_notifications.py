@@ -5,17 +5,18 @@ Tests for Telegram and Email alerts.
 """
 
 import asyncio
-from datetime import datetime, timezone
-from unittest.mock import AsyncMock, Mock, patch, MagicMock
+from datetime import UTC, datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 
 from bot.risk.emergency_stop import EmergencyEvent, EmergencyTrigger
 from bot.risk.notifications import (
-    TelegramConfig,
     EmailConfig,
-    TelegramNotifier,
     EmailNotifier,
     NotificationManager,
+    TelegramConfig,
+    TelegramNotifier,
 )
 
 
@@ -24,7 +25,7 @@ def emergency_event():
     """Create test emergency event."""
     return EmergencyEvent(
         trigger=EmergencyTrigger.FLASH_CRASH,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         message="Flash crash detected: 12% price drop in 5 minutes",
         details={
             "symbol": "BTCUSDT",
@@ -70,9 +71,7 @@ class TestTelegramNotifier:
     @pytest.mark.asyncio
     @patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True)
     @patch("bot.risk.notifications.Bot")
-    async def test_telegram_message_format(
-        self, mock_bot_class, telegram_config, emergency_event
-    ):
+    async def test_telegram_message_format(self, mock_bot_class, telegram_config, emergency_event):
         """Test Telegram message formatting."""
         mock_bot = AsyncMock()
         mock_bot_class.return_value = mock_bot
@@ -212,9 +211,7 @@ class TestEmailNotifier:
 
     @pytest.mark.asyncio
     @patch("bot.risk.notifications.smtplib.SMTP")
-    async def test_email_send_error_handling(
-        self, mock_smtp_class, email_config, emergency_event
-    ):
+    async def test_email_send_error_handling(self, mock_smtp_class, email_config, emergency_event):
         """Test error handling during Email send."""
         mock_smtp = MagicMock()
         mock_smtp.send_message.side_effect = Exception("SMTP connection failed")

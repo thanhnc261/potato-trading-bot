@@ -11,24 +11,24 @@ Comprehensive tests for all trigger conditions:
 """
 
 import asyncio
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock
+
 import pytest
 
-from bot.risk.emergency_stop import (
-    EmergencyStopManager,
-    EmergencyConfig,
-    EmergencyTrigger,
-    EmergencyState,
-    EmergencyEvent,
-)
 from bot.interfaces.exchange import (
     Order,
     OrderSide,
     OrderStatus,
     OrderType,
-    TimeInForce,
+)
+from bot.risk.emergency_stop import (
+    EmergencyConfig,
+    EmergencyEvent,
+    EmergencyState,
+    EmergencyStopManager,
+    EmergencyTrigger,
 )
 
 
@@ -133,7 +133,7 @@ class TestFlashCrashDetection:
         symbol = "BTCUSDT"
 
         # Manually create old price data
-        old_time = datetime.now(timezone.utc) - timedelta(seconds=400)
+        # old_time = datetime.now(UTC) - timedelta(seconds=400)  # Would need time mocking
         emergency_manager._price_history[symbol] = []
 
         # This test would require mocking time, skipping for simplicity
@@ -176,15 +176,14 @@ class TestAPIFailureDetection:
         assert not emergency_manager.is_halted()
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_api_unreachable_duration(self, emergency_manager, alert_callback):
         """Test API unreachable duration threshold."""
         # Start monitoring
         await emergency_manager.start_monitoring()
 
         # Set last successful call to 35 seconds ago
-        emergency_manager._last_successful_api_call = datetime.now(
-            timezone.utc
-        ) - timedelta(seconds=35)
+        emergency_manager._last_successful_api_call = datetime.now(UTC) - timedelta(seconds=35)
 
         # Wait for monitoring to detect
         await asyncio.sleep(6)  # Monitoring loop runs every 5 seconds
@@ -201,7 +200,7 @@ class TestPortfolioDrawdown:
     @pytest.mark.asyncio
     async def test_drawdown_exceeds_threshold(self, emergency_manager, alert_callback):
         """Test drawdown exceeding 10% threshold."""
-        initial_value = Decimal("10000")
+        # initial_value = Decimal("10000")  # Initial value set in fixture
         drawdown_value = Decimal("8900")  # 11% drawdown
 
         # Update portfolio value
@@ -220,7 +219,7 @@ class TestPortfolioDrawdown:
     @pytest.mark.asyncio
     async def test_drawdown_under_threshold(self, emergency_manager):
         """Test drawdown under threshold does not trigger."""
-        initial_value = Decimal("10000")
+        # initial_value = Decimal("10000")  # Initial value set in fixture
         small_drawdown_value = Decimal("9200")  # 8% drawdown
 
         # Update portfolio value
@@ -276,6 +275,7 @@ class TestDataQualityMonitoring:
         assert emergency_manager.is_halted()
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_stale_data_detection(self, emergency_manager, alert_callback):
         """Test stale data detection."""
         symbol = "BTCUSDT"
@@ -284,9 +284,7 @@ class TestDataQualityMonitoring:
         await emergency_manager.start_monitoring()
 
         # Set last update to 65 seconds ago
-        emergency_manager._last_data_update[symbol] = datetime.now(timezone.utc) - timedelta(
-            seconds=65
-        )
+        emergency_manager._last_data_update[symbol] = datetime.now(UTC) - timedelta(seconds=65)
 
         # Wait for monitoring to detect
         await asyncio.sleep(6)
@@ -315,7 +313,7 @@ class TestEmergencyActions:
                 status=OrderStatus.OPEN,
                 filled_quantity=Decimal("0"),
                 remaining_quantity=Decimal("0.1"),
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             ),
             Order(
                 id="2",
@@ -327,7 +325,7 @@ class TestEmergencyActions:
                 status=OrderStatus.OPEN,
                 filled_quantity=Decimal("0"),
                 remaining_quantity=Decimal("1.0"),
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             ),
         ]
 
@@ -355,7 +353,7 @@ class TestEmergencyActions:
                 status=OrderStatus.OPEN,
                 filled_quantity=Decimal("0"),
                 remaining_quantity=Decimal("0.1"),
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             ),
         ]
 
@@ -436,6 +434,7 @@ class TestAutoRecovery:
         assert emergency_manager.is_halted()
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_auto_recovery_enabled(self, mock_exchange, alert_callback):
         """Test auto-recovery when enabled."""
         config = EmergencyConfig(
@@ -542,7 +541,7 @@ class TestIntegration:
                 status=OrderStatus.OPEN,
                 filled_quantity=Decimal("0"),
                 remaining_quantity=Decimal("0.1"),
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             ),
         ]
         mock_exchange.get_open_orders.return_value = orders

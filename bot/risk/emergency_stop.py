@@ -12,19 +12,18 @@ This module provides a comprehensive kill-switch system with:
 """
 
 import asyncio
-from datetime import datetime, timezone, timedelta
+from collections import deque
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Callable, Any
-from dataclasses import dataclass, field
-from collections import deque
+from typing import Any
 
 import structlog
 
 from bot.core.logging_config import CorrelationContext
-from bot.interfaces.exchange import ExchangeInterface, OrderSide, OrderType
-from bot.config.models import RiskConfig
-
+from bot.interfaces.exchange import ExchangeInterface
 
 logger = structlog.get_logger(__name__)
 
@@ -67,9 +66,9 @@ class EmergencyEvent:
     trigger: EmergencyTrigger
     timestamp: datetime
     message: str
-    details: Dict[str, Any]
+    details: dict[str, Any]
     severity: int = 10
-    correlation_id: Optional[str] = None
+    correlation_id: str | None = None
 
 
 @dataclass
@@ -124,8 +123,8 @@ class EmergencyStopManager:
         self,
         exchange: ExchangeInterface,
         initial_portfolio_value: Decimal,
-        config: Optional[EmergencyConfig] = None,
-        alert_callback: Optional[Callable[[EmergencyEvent], None]] = None,
+        config: EmergencyConfig | None = None,
+        alert_callback: Callable[[EmergencyEvent], None] | None = None,
     ):
         """
         Initialize emergency stop manager.
@@ -152,24 +151,24 @@ class EmergencyStopManager:
 
         # Price history for flash crash detection
         # symbol -> deque of PriceDataPoint
-        self._price_history: Dict[str, deque[PriceDataPoint]] = {}
+        self._price_history: dict[str, deque[PriceDataPoint]] = {}
 
         # API health tracking
-        self._last_successful_api_call: Optional[datetime] = None
+        self._last_successful_api_call: datetime | None = None
         self._consecutive_api_failures = 0
-        self._api_failure_start: Optional[datetime] = None
+        self._api_failure_start: datetime | None = None
 
         # Data quality tracking
-        self._last_data_update: Dict[str, datetime] = {}  # symbol -> last update time
+        self._last_data_update: dict[str, datetime] = {}  # symbol -> last update time
 
         # Emergency events log
-        self._emergency_events: List[EmergencyEvent] = []
+        self._emergency_events: list[EmergencyEvent] = []
 
         # Recovery tracking
-        self._recovery_task: Optional[asyncio.Task] = None
+        self._recovery_task: asyncio.Task | None = None
 
         # Monitoring task
-        self._monitoring_task: Optional[asyncio.Task] = None
+        self._monitoring_task: asyncio.Task | None = None
         self._stop_monitoring = asyncio.Event()
 
         logger.info(
@@ -247,7 +246,7 @@ class EmergencyStopManager:
             )
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Initialize price history for symbol if needed
         if symbol not in self._price_history:
@@ -273,13 +272,11 @@ class EmergencyStopManager:
         if symbol not in self._price_history or len(self._price_history[symbol]) < 2:
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         window_start = now - timedelta(seconds=self.config.flash_crash_window_seconds)
 
         # Get prices within the time window
-        recent_prices = [
-            dp for dp in self._price_history[symbol] if dp.timestamp >= window_start
-        ]
+        recent_prices = [dp for dp in self._price_history[symbol] if dp.timestamp >= window_start]
 
         if len(recent_prices) < 2:
             return
@@ -315,7 +312,7 @@ class EmergencyStopManager:
         Args:
             new_value: New portfolio value
         """
-        old_value = self.current_portfolio_value
+        _ = self.current_portfolio_value  # Store old value for potential logging
         self.current_portfolio_value = new_value
 
         # Update peak value
@@ -324,7 +321,9 @@ class EmergencyStopManager:
 
         # Calculate drawdown from peak
         if self.peak_portfolio_value > 0:
-            drawdown_pct = float((self.peak_portfolio_value - new_value) / self.peak_portfolio_value)
+            drawdown_pct = float(
+                (self.peak_portfolio_value - new_value) / self.peak_portfolio_value
+            )
 
             if drawdown_pct > self.config.max_drawdown_pct:
                 await self._trigger_emergency(
@@ -342,13 +341,13 @@ class EmergencyStopManager:
 
     async def record_api_success(self) -> None:
         """Record successful API call."""
-        self._last_successful_api_call = datetime.now(timezone.utc)
+        self._last_successful_api_call = datetime.now(UTC)
         self._consecutive_api_failures = 0
         self._api_failure_start = None
 
     async def record_api_failure(self) -> None:
         """Record API failure and check thresholds."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self._consecutive_api_failures += 1
 
         if self._api_failure_start is None:
@@ -372,7 +371,7 @@ class EmergencyStopManager:
         if self._last_successful_api_call is None:
             return
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_since_success = (now - self._last_successful_api_call).total_seconds()
 
         if time_since_success > self.config.api_failure_threshold_seconds:
@@ -389,7 +388,7 @@ class EmergencyStopManager:
 
     async def _check_data_staleness(self) -> None:
         """Check for stale data feeds."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         for symbol, last_update in self._last_data_update.items():
             time_since_update = (now - last_update).total_seconds()
@@ -411,7 +410,7 @@ class EmergencyStopManager:
         self,
         trigger: EmergencyTrigger,
         message: str,
-        details: Dict[str, Any],
+        details: dict[str, Any],
         severity: int = 10,
     ) -> None:
         """
@@ -435,7 +434,7 @@ class EmergencyStopManager:
         with CorrelationContext() as correlation_id:
             event = EmergencyEvent(
                 trigger=trigger,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 message=message,
                 details=details,
                 severity=severity,
@@ -498,7 +497,7 @@ class EmergencyStopManager:
                 # Schedule auto-recovery if enabled
                 if self.config.enable_auto_recovery:
                     self._recovery_task = asyncio.create_task(
-                        self._auto_recovery(event.correlation_id)
+                        self._auto_recovery(event.correlation_id or "recovery")
                     )
 
             except Exception as e:
@@ -687,7 +686,7 @@ class EmergencyStopManager:
         """
         return self.state
 
-    def get_emergency_events(self, limit: Optional[int] = None) -> List[EmergencyEvent]:
+    def get_emergency_events(self, limit: int | None = None) -> list[EmergencyEvent]:
         """
         Get emergency events history.
 
@@ -701,7 +700,7 @@ class EmergencyStopManager:
             return self._emergency_events[-limit:]
         return self._emergency_events.copy()
 
-    def get_metrics(self) -> Dict[str, Any]:
+    def get_metrics(self) -> dict[str, Any]:
         """
         Get current emergency system metrics.
 

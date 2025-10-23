@@ -10,10 +10,9 @@ This module provides:
 
 import asyncio
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from typing import Optional, List
 from dataclasses import dataclass
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import structlog
 
@@ -26,7 +25,6 @@ except ImportError:
     TELEGRAM_AVAILABLE = False
 
 from bot.risk.emergency_stop import EmergencyEvent
-
 
 logger = structlog.get_logger(__name__)
 
@@ -43,7 +41,7 @@ class TelegramConfig:
     """
 
     bot_token: str
-    chat_ids: List[str]
+    chat_ids: list[str]
     enabled: bool = True
 
 
@@ -68,7 +66,7 @@ class EmailConfig:
     smtp_username: str
     smtp_password: str
     from_email: str
-    to_emails: List[str]
+    to_emails: list[str]
     use_tls: bool = True
     enabled: bool = True
 
@@ -278,9 +276,7 @@ class EmailNotifier:
             msg.attach(part2)
 
             # Send email in executor (blocking I/O)
-            await asyncio.get_event_loop().run_in_executor(
-                None, self._send_smtp, msg, to_email
-            )
+            await asyncio.get_event_loop().run_in_executor(None, self._send_smtp, msg, to_email)
 
             logger.debug("email_sent", to_email=to_email)
 
@@ -417,8 +413,8 @@ class NotificationManager:
 
     def __init__(
         self,
-        telegram_config: Optional[TelegramConfig] = None,
-        email_config: Optional[EmailConfig] = None,
+        telegram_config: TelegramConfig | None = None,
+        email_config: EmailConfig | None = None,
     ):
         """
         Initialize notification manager.
@@ -427,7 +423,7 @@ class NotificationManager:
             telegram_config: Optional Telegram configuration
             email_config: Optional email configuration
         """
-        self.notifiers: List = []
+        self.notifiers: list = []
 
         if telegram_config:
             self.notifiers.append(TelegramNotifier(telegram_config))
