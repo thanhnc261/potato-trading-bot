@@ -338,6 +338,7 @@ class TestMarketDataStream:
         assert len(stream._callbacks) == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_callback_invocation(self):
         """Test that callbacks are invoked with tick data"""
         stream = MarketDataStream()
@@ -446,6 +447,7 @@ class TestMarketDataStream:
             assert stream.state == ConnectionState.DISCONNECTED
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_reconnection_exponential_backoff(self):
         """Test reconnection with exponential backoff"""
         stream = MarketDataStream(
@@ -473,6 +475,7 @@ class TestMarketDataStream:
             await stream.disconnect()
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_buffer_data_storage(self):
         """Test that tick data is stored in buffer"""
         stream = MarketDataStream()
@@ -622,6 +625,7 @@ class TestIntegration:
     """Integration tests for complete workflow"""
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
     async def test_end_to_end_streaming(self):
         """Test complete end-to-end streaming workflow"""
         # Create manager

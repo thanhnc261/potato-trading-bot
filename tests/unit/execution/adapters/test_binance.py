@@ -12,7 +12,7 @@ Tests cover:
 
 import asyncio
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 from aiohttp import ClientError, ClientSession
@@ -202,10 +202,11 @@ class TestBinanceAdapter:
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"price": "50000.0"})
         mock_response.text = AsyncMock(return_value='{"price": "50000.0"}')
-
-        mock_session.request = AsyncMock(return_value=mock_response)
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
+
+        # mock_session.request should return the context manager
+        mock_session.request = Mock(return_value=mock_response)
 
         result = await adapter._request("GET", "/api/v3/ticker/price")
 
@@ -226,7 +227,7 @@ class TestBinanceAdapter:
 
         call_count = 0
 
-        async def mock_request(*args, **kwargs):
+        def mock_request(*args, **kwargs):
             nonlocal call_count
             call_count += 1
             if call_count < 3:
@@ -246,7 +247,7 @@ class TestBinanceAdapter:
         adapter.session = mock_session
 
         # All attempts fail
-        mock_session.request = AsyncMock(side_effect=ClientError("Network error"))
+        mock_session.request = Mock(side_effect=ClientError("Network error"))
 
         with pytest.raises(ExchangeAPIError, match="Request failed after"):
             await adapter._request("GET", "/api/v3/ping")
@@ -274,7 +275,7 @@ class TestBinanceAdapter:
 
         call_count = 0
 
-        async def mock_request(*args, **kwargs):
+        def mock_request(*args, **kwargs):
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -299,7 +300,7 @@ class TestBinanceAdapter:
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
 
-        mock_session.request = AsyncMock(return_value=mock_response)
+        mock_session.request = Mock(return_value=mock_response)
 
         with pytest.raises(ExchangeAuthenticationError, match="Authentication failed"):
             await adapter._request("GET", "/api/v3/account", signed=True)
@@ -315,7 +316,7 @@ class TestBinanceAdapter:
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
 
-        mock_session.request = AsyncMock(return_value=mock_response)
+        mock_session.request = Mock(return_value=mock_response)
 
         with pytest.raises(InsufficientBalanceError):
             await adapter._request("POST", "/api/v3/order", signed=True)
@@ -331,7 +332,7 @@ class TestBinanceAdapter:
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
 
-        mock_session.request = AsyncMock(return_value=mock_response)
+        mock_session.request = Mock(return_value=mock_response)
 
         with pytest.raises(OrderNotFoundError):
             await adapter._request("DELETE", "/api/v3/order", signed=True)
@@ -347,7 +348,7 @@ class TestBinanceAdapter:
         mock_response.__aenter__ = AsyncMock(return_value=mock_response)
         mock_response.__aexit__ = AsyncMock(return_value=None)
 
-        mock_session.request = AsyncMock(return_value=mock_response)
+        mock_session.request = Mock(return_value=mock_response)
 
         with pytest.raises(InvalidOrderError):
             await adapter._request("POST", "/api/v3/order", signed=True)

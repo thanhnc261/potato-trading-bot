@@ -193,8 +193,13 @@ class MarketDataBuffer:
 
             table = self._tables[symbol]
 
-            # Filter by timestamp
-            mask = (table["timestamp"] >= start_time) & (table["timestamp"] <= end_time)
+            # Filter by timestamp using PyArrow compute
+            import pyarrow.compute as pc
+
+            mask = pc.and_(
+                pc.greater_equal(table["timestamp"], start_time),
+                pc.less_equal(table["timestamp"], end_time),
+            )
             filtered = table.filter(mask)
 
             return filtered.to_pandas() if len(filtered) > 0 else None

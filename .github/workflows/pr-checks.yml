@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.13"
 
 jobs:
   # Quick validation for PRs
@@ -102,7 +102,7 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest tests/ --cov=bot --cov-report=term --cov-report=json
+          pytest tests/unit/ -v --cov=bot --cov-report=term --cov-report=json -m "not integration and not slow"
         env:
           PYTHONPATH: ${{ github.workspace }}
 

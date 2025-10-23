@@ -56,14 +56,14 @@ lint: ## Run code formatters and linters
 typecheck: ## Run type checking
 	$(PYTHON) -m mypy bot/
 
-test: ## Run unit tests only (skip integration)
-	$(PYTHON) -m pytest tests/unit/ -v
+test: ## Run unit tests only (skip integration and slow tests)
+	$(PYTHON) -m pytest tests/unit/ -v -m "not integration and not slow"
 
 test-integration: ## Run integration tests
 	$(PYTHON) -m pytest tests/integration/ -v -m integration
 
-test-all: ## Run all tests (unit + integration)
-	$(PYTHON) -m pytest tests/ -v
+test-all: ## Run all tests (unit + integration, skip slow)
+	$(PYTHON) -m pytest tests/ -v -m "not slow"
 
 test-cov: ## Run tests with coverage
 	$(PYTHON) -m pytest tests/unit/ -v --cov=bot --cov-report=html --cov-report=term

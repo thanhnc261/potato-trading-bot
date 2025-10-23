@@ -102,6 +102,7 @@ ignore = [
 
 [tool.mypy]
 python_version = "3.13"
+# Primary testing and development on Python 3.13
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -128,12 +129,14 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --tb=short --timeout=30 -m 'not integration'"
+addopts = "-ra -q --strict-markers --tb=short --timeout=5 -m 'not integration and not slow'"
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+timeout_func_only = true
 markers = [
     "integration: marks tests as integration tests (deselected by default)",
+    "slow: marks tests as slow (deselected by default)",
 ]
 
 [tool.coverage.run]

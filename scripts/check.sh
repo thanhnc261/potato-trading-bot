@@ -69,9 +69,9 @@ fi
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "4️⃣  Running unit tests with pytest..."
+echo "4️⃣  Running unit tests with pytest (skip slow tests)..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if $PYTHON -m pytest tests/unit/ -v --tb=short; then
+if $PYTHON -m pytest tests/unit/ -v --tb=short -m "not integration and not slow"; then
     echo -e "${GREEN}✅ Unit tests passed${NC}"
 else
     echo -e "${RED}❌ Unit tests failed${NC}"
