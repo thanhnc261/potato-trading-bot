@@ -138,6 +138,63 @@ class RiskConfig(BaseModel):
     enable_emergency_stop: bool = Field(default=True, description="Enable emergency stop system")
 
 
+class StrategyType(str, Enum):
+    """Available strategy types."""
+
+    RSI = "rsi"
+    MA_CROSSOVER = "ma_crossover"
+
+
+class StrategyConfig(BaseModel):
+    """
+    Strategy configuration.
+
+    Attributes:
+        type: Strategy type (rsi, ma_crossover)
+        enabled: Whether strategy is enabled
+        parameters: Strategy-specific parameters
+    """
+
+    type: StrategyType = Field(default=StrategyType.RSI, description="Strategy type")
+    enabled: bool = Field(default=True, description="Enable strategy")
+    parameters: dict[str, float | int | str] = Field(
+        default_factory=dict,
+        description="Strategy-specific parameters",
+    )
+
+    @field_validator("parameters")
+    @classmethod
+    def validate_parameters(cls, v: dict[str, float | int | str], info: dict) -> dict[str, float | int | str]:
+        """Validate strategy parameters based on strategy type."""
+        # Add default parameters if not provided
+        if not v:
+            strategy_type = info.data.get("type", StrategyType.RSI)
+            if strategy_type == StrategyType.RSI:
+                return {
+                    "rsi_period": 14,
+                    "oversold_threshold": 30,
+                    "overbought_threshold": 70,
+                    "stop_loss_pct": 0.02,
+                    "take_profit_pct": 0.04,
+                    "position_size_pct": 0.1,
+                }
+            elif strategy_type == StrategyType.MA_CROSSOVER:
+                return {
+                    "fast_period": 20,
+                    "slow_period": 50,
+                    "ma_type": "sma",
+                    "stop_loss_pct": 0.02,
+                    "take_profit_pct": 0.04,
+                    "position_size_pct": 0.1,
+                }
+        return v
+
+    class Config:
+        """Pydantic config."""
+
+        use_enum_values = True
+
+
 class BotConfig(BaseModel):
     """
     Main bot configuration.
@@ -149,6 +206,7 @@ class BotConfig(BaseModel):
         logging: Logging configuration
         exchange: Exchange configuration
         risk: Risk management configuration
+        strategy: Strategy configuration
     """
 
     name: str = Field(default="Potato Trading Bot", description="Bot name")
@@ -157,6 +215,7 @@ class BotConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     exchange: ExchangeConfig | None = None
     risk: RiskConfig = Field(default_factory=RiskConfig)
+    strategy: StrategyConfig = Field(default_factory=StrategyConfig)
 
     @field_validator("environment")
     @classmethod
