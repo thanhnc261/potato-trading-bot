@@ -32,11 +32,14 @@ from bot.interfaces.exchange import (
     TimeInForce,
 )
 
-# Skip all tests if API credentials not available
-pytestmark = pytest.mark.skipif(
-    not os.getenv("BINANCE_TESTNET_API_KEY") or not os.getenv("BINANCE_TESTNET_API_SECRET"),
-    reason="Binance testnet credentials not available. Set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET environment variables.",
-)
+# Mark as integration tests and skip if API credentials not available
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        not os.getenv("BINANCE_TESTNET_API_KEY") or not os.getenv("BINANCE_TESTNET_API_SECRET"),
+        reason="Binance testnet credentials not available. Set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET environment variables.",
+    ),
+]
 
 
 @pytest.fixture

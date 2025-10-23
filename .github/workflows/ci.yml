@@ -93,9 +93,9 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Run pytest with coverage
+      - name: Run pytest with coverage (unit tests only)
         run: |
-          pytest tests/ -v --tb=short --cov=bot --cov-report=xml --cov-report=term
+          pytest tests/unit/ -v --tb=short --cov=bot --cov-report=xml --cov-report=term --timeout=30
         env:
           PYTHONPATH: ${{ github.workspace }}
 

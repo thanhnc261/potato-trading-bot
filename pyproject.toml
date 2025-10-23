@@ -128,10 +128,13 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -q --strict-markers --tb=short"
+addopts = "-ra -q --strict-markers --tb=short --timeout=30 -m 'not integration'"
 testpaths = ["tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
+markers = [
+    "integration: marks tests as integration tests (deselected by default)",
+]
 
 [tool.coverage.run]
 source = ["bot"]
