@@ -49,19 +49,20 @@ def mock_exchange():
     # Default successful order response
     exchange.create_order = AsyncMock(
         return_value=Order(
-            order_id="ORDER123",
+            id="ORDER123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
+            type=OrderType.MARKET,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CLOSED,
             filled_quantity=Decimal("0.1"),
+            remaining_quantity=Decimal("0"),
             average_price=Decimal("50000"),
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0.001"),
             commission_asset="BTC",
         )
@@ -69,19 +70,20 @@ def mock_exchange():
 
     exchange.cancel_order = AsyncMock(
         return_value=Order(
-            order_id="ORDER123",
+            id="ORDER123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.LIMIT,
+            type=OrderType.LIMIT,
             quantity=Decimal("0.1"),
             price=Decimal("50000"),
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CANCELED,
             filled_quantity=Decimal("0"),
+            remaining_quantity=Decimal("0.1"),
             average_price=None,
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0"),
             commission_asset="BTC",
         )
@@ -89,25 +91,26 @@ def mock_exchange():
 
     exchange.get_order = AsyncMock(
         return_value=Order(
-            order_id="ORDER123",
+            id="ORDER123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
+            type=OrderType.MARKET,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CLOSED,
             filled_quantity=Decimal("0.1"),
+            remaining_quantity=Decimal("0"),
             average_price=Decimal("50000"),
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0.001"),
             commission_asset="BTC",
         )
     )
 
-    exchange.get_ticker_price = AsyncMock(return_value={"price": "50000"})
+    exchange.get_ticker_price = AsyncMock(return_value=Decimal("50000"))
 
     return exchange
 
@@ -183,7 +186,7 @@ class TestMarketOrderExecution:
 
         assert result.success is True
         assert result.order is not None
-        assert result.order.order_id == "ORDER123"
+        assert result.order.id == "ORDER123"
         assert result.order.status == OrderStatus.CLOSED
         assert result.error_message is None
 
@@ -259,19 +262,20 @@ class TestLimitOrderExecution:
         """Test successful execution of a limit order."""
         # Mock limit order response
         mock_exchange.create_order.return_value = Order(
-            order_id="LIMIT123",
+            id="LIMIT123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.LIMIT,
+            type=OrderType.LIMIT,
             quantity=Decimal("0.1"),
             price=Decimal("49000"),
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.OPEN,
             filled_quantity=Decimal("0"),
+            remaining_quantity=Decimal("0.1"),
             average_price=None,
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0"),
             commission_asset="BTC",
         )
@@ -286,7 +290,7 @@ class TestLimitOrderExecution:
 
         assert result.success is True
         assert result.order is not None
-        assert result.order.order_type == OrderType.LIMIT
+        assert result.order.type == OrderType.LIMIT
         assert result.order.price == Decimal("49000")
         assert result.order.status == OrderStatus.OPEN
 
@@ -321,19 +325,20 @@ class TestStopLossOrderExecution:
         """Test successful execution of a stop-loss order."""
         # Mock stop-loss order response
         mock_exchange.create_order.return_value = Order(
-            order_id="STOP123",
+            id="STOP123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.SELL,
-            order_type=OrderType.STOP_LOSS,
+            type=OrderType.STOP_LOSS,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=Decimal("48000"),
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.PENDING,
             filled_quantity=Decimal("0"),
+            remaining_quantity=Decimal("0.1"),
             average_price=None,
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0"),
             commission_asset="BTC",
         )
@@ -347,7 +352,7 @@ class TestStopLossOrderExecution:
 
         assert result.success is True
         assert result.order is not None
-        assert result.order.order_type == OrderType.STOP_LOSS
+        assert result.order.type == OrderType.STOP_LOSS
         assert result.order.stop_price == Decimal("48000")
 
         # Verify exchange was called correctly
@@ -620,7 +625,7 @@ class TestOrderCancellation:
             quantity=Decimal("0.1"),
         )
 
-        order_id = result.order.order_id
+        order_id = result.order.id
 
         # Cancel the order
         success = await orchestrator.cancel_order(order_id=order_id, symbol="BTCUSDT")
@@ -642,19 +647,20 @@ class TestOrderCancellation:
         """Test cancellation of all active orders."""
         # Create limit orders that stay open
         mock_exchange.create_order.return_value = Order(
-            order_id="LIMIT1",
+            id="LIMIT1",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.LIMIT,
+            type=OrderType.LIMIT,
             quantity=Decimal("0.1"),
             price=Decimal("49000"),
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.OPEN,
             filled_quantity=Decimal("0"),
+            remaining_quantity=Decimal("0.1"),
             average_price=None,
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0"),
             commission_asset="BTC",
         )
@@ -682,7 +688,7 @@ class TestOrderStatusTracking:
         order = await orchestrator.get_order_status(order_id="ORDER123", symbol="BTCUSDT")
 
         assert order is not None
-        assert order.order_id == "ORDER123"
+        assert order.id == "ORDER123"
         mock_exchange.get_order.assert_called_once_with(order_id="ORDER123", symbol="BTCUSDT")
 
     @pytest.mark.asyncio
@@ -720,19 +726,20 @@ class TestOrderStatusTracking:
 
         # Test filled order
         filled_order = Order(
-            order_id="ORDER123",
+            id="ORDER123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
+            type=OrderType.MARKET,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CLOSED,
             filled_quantity=Decimal("0.1"),
+            remaining_quantity=Decimal("0"),
             average_price=Decimal("50000"),
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0.001"),
             commission_asset="BTC",
         )
@@ -768,26 +775,28 @@ class TestPortfolioUpdates:
 
         # For BUY, should add positive position
         assert call_args.kwargs["symbol"] == "BTCUSDT"
-        assert call_args.kwargs["value"] > 0
+        assert call_args.kwargs["position_value"] > 0
+        assert call_args.kwargs["add"] is True
 
     @pytest.mark.asyncio
     async def test_portfolio_update_on_sell(self, orchestrator, mock_risk_manager, mock_exchange):
         """Test portfolio update after sell order."""
         # Configure for sell order
         mock_exchange.create_order.return_value = Order(
-            order_id="SELL123",
+            id="SELL123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.SELL,
-            order_type=OrderType.MARKET,
+            type=OrderType.MARKET,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CLOSED,
             filled_quantity=Decimal("0.1"),
+            remaining_quantity=Decimal("0"),
             average_price=Decimal("50000"),
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0.001"),
             commission_asset="USDT",
         )
@@ -800,12 +809,13 @@ class TestPortfolioUpdates:
 
         assert result.success is True
 
-        # Verify portfolio was updated with negative value (for SELL)
+        # Verify portfolio was updated (for SELL, we remove position)
         mock_risk_manager.update_position.assert_called_once()
         call_args = mock_risk_manager.update_position.call_args
 
         assert call_args.kwargs["symbol"] == "BTCUSDT"
-        assert call_args.kwargs["value"] < 0
+        assert call_args.kwargs["position_value"] > 0
+        assert call_args.kwargs["add"] is False
 
 
 class TestOrderCallbacks:
@@ -833,7 +843,7 @@ class TestOrderCallbacks:
         assert result.success is True
         assert callback_invoked is True
         assert received_order is not None
-        assert received_order.order_id == result.order.order_id
+        assert received_order.id == result.order.id
 
     @pytest.mark.asyncio
     async def test_async_callback_invoked(self, orchestrator):
@@ -882,19 +892,20 @@ class TestOrchestratorMetrics:
         """Test retrieving orchestrator metrics."""
         # Create some limit orders to have active orders
         mock_exchange.create_order.return_value = Order(
-            order_id="LIMIT1",
+            id="LIMIT1",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.LIMIT,
+            type=OrderType.LIMIT,
             quantity=Decimal("0.1"),
             price=Decimal("49000"),
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.OPEN,
             filled_quantity=Decimal("0"),
+            remaining_quantity=Decimal("0.1"),
             average_price=None,
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0"),
             commission_asset="BTC",
         )
@@ -995,19 +1006,20 @@ class TestOrderExecutionResult:
         )
 
         order = Order(
-            order_id="ORDER123",
+            id="ORDER123",
             client_order_id=None,
             symbol="BTCUSDT",
             side=OrderSide.BUY,
-            order_type=OrderType.MARKET,
+            type=OrderType.MARKET,
             quantity=Decimal("0.1"),
             price=None,
             stop_price=None,
             time_in_force=TimeInForce.GTC,
             status=OrderStatus.CLOSED,
             filled_quantity=Decimal("0.1"),
+            remaining_quantity=Decimal("0"),
             average_price=Decimal("50000"),
-            timestamp=int(datetime.now().timestamp() * 1000),
+            created_at=datetime.now(),
             commission=Decimal("0.001"),
             commission_asset="BTC",
         )
