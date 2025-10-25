@@ -116,10 +116,11 @@ def demo_rsi_strategy():
         )
 
         # Simulate price movement and check exit conditions
+        take_profit_price = position.take_profit if position.take_profit else position.entry_price * 1.04
         test_prices = [
             position.entry_price * 0.99,  # Small loss
             position.entry_price * 1.01,  # Small profit
-            position.take_profit * 1.001,  # Take profit hit
+            take_profit_price * 1.001,  # Take profit hit
         ]
 
         for price in test_prices:
@@ -203,7 +204,7 @@ def demo_backtesting():
         # Entry logic
         if signal.signal == Signal.BUY and strategy.current_position is None:
             size = strategy.get_position_size(signal, capital)
-            position = strategy.enter_position(signal, size)
+            strategy.enter_position(signal, size)
 
             logger.info(
                 "backtest_entry",
@@ -245,7 +246,9 @@ def demo_backtesting():
         losing_trades = [t for t in trades if t["pnl"] <= 0]
         win_rate = len(winning_trades) / len(trades) * 100
 
-        avg_win = sum(t["pnl"] for t in winning_trades) / len(winning_trades) if winning_trades else 0
+        avg_win = (
+            sum(t["pnl"] for t in winning_trades) / len(winning_trades) if winning_trades else 0
+        )
         avg_loss = sum(t["pnl"] for t in losing_trades) / len(losing_trades) if losing_trades else 0
 
         logger.info(
@@ -274,7 +277,7 @@ def main():
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.dev.ConsoleRenderer(),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(logging_level=20),
+        wrapper_class=structlog.make_filtering_bound_logger(20),
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False,

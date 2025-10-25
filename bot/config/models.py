@@ -162,13 +162,15 @@ class StrategyConfig(BaseModel):
         description="Strategy-specific parameters",
     )
 
-    @field_validator("parameters")
+    @field_validator("parameters")  # type: ignore
     @classmethod
-    def validate_parameters(cls, v: dict[str, float | int | str], info: dict) -> dict[str, float | int | str]:
+    def validate_parameters(
+        cls, v: dict[str, float | int | str], info: dict
+    ) -> dict[str, float | int | str]:
         """Validate strategy parameters based on strategy type."""
         # Add default parameters if not provided
         if not v:
-            strategy_type = info.data.get("type", StrategyType.RSI)
+            strategy_type = info.get("data", {}).get("type", StrategyType.RSI)
             if strategy_type == StrategyType.RSI:
                 return {
                     "rsi_period": 14,

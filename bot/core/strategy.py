@@ -156,11 +156,15 @@ class BaseStrategy(ABC):
         Returns:
             Position size in base currency units
         """
-        position_pct = self.config.get("position_size_pct", 0.1)
+        position_pct = float(self.config.get("position_size_pct", 0.1))
         return capital * position_pct / signal.price
 
     def enter_position(
-        self, signal: StrategySignal, size: float, stop_loss: float | None = None, take_profit: float | None = None
+        self,
+        signal: StrategySignal,
+        size: float,
+        stop_loss: float | None = None,
+        take_profit: float | None = None,
     ) -> Position:
         """
         Enter a new position.
@@ -354,7 +358,9 @@ class RSIStrategy(BaseStrategy):
 
         elif current_rsi > self.overbought_threshold:
             # Overbought - SELL signal
-            confidence = (current_rsi - self.overbought_threshold) / (100 - self.overbought_threshold)
+            confidence = (current_rsi - self.overbought_threshold) / (
+                100 - self.overbought_threshold
+            )
             signal = Signal.SELL
             reason = f"RSI overbought: {current_rsi:.2f} > {self.overbought_threshold}"
 
@@ -418,7 +424,11 @@ class RSIStrategy(BaseStrategy):
         return False, ""
 
     def enter_position(
-        self, signal: StrategySignal, size: float, stop_loss: float | None = None, take_profit: float | None = None
+        self,
+        signal: StrategySignal,
+        size: float,
+        stop_loss: float | None = None,
+        take_profit: float | None = None,
     ) -> Position:
         """
         Enter position with automatic stop loss and take profit calculation.
@@ -634,7 +644,11 @@ class MovingAverageCrossoverStrategy(BaseStrategy):
         return False, ""
 
     def enter_position(
-        self, signal: StrategySignal, size: float, stop_loss: float | None = None, take_profit: float | None = None
+        self,
+        signal: StrategySignal,
+        size: float,
+        stop_loss: float | None = None,
+        take_profit: float | None = None,
     ) -> Position:
         """
         Enter position with automatic stop loss and take profit calculation.

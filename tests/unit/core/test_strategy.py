@@ -17,9 +17,7 @@ import pandas as pd
 import pytest
 
 from bot.core.strategy import (
-    BaseStrategy,
     MovingAverageCrossoverStrategy,
-    Position,
     PositionSide,
     RSIStrategy,
     Signal,
@@ -281,7 +279,7 @@ class TestRSIStrategy:
         """Test exiting position with profit"""
         strategy = RSIStrategy()
         signal = strategy.generate_signal(oversold_data)
-        position = strategy.enter_position(signal, size=0.1)
+        strategy.enter_position(signal, size=0.1)
 
         # Exit at higher price
         exit_price = signal.price * 1.05
@@ -298,7 +296,7 @@ class TestRSIStrategy:
         """Test exiting position with loss"""
         strategy = RSIStrategy()
         signal = strategy.generate_signal(oversold_data)
-        position = strategy.enter_position(signal, size=0.1)
+        strategy.enter_position(signal, size=0.1)
 
         # Exit at lower price
         exit_price = signal.price * 0.95
@@ -393,7 +391,7 @@ class TestMovingAverageCrossoverStrategy:
         strategy = MovingAverageCrossoverStrategy()
 
         # First signal to initialize
-        signal1 = strategy.generate_signal(sample_ohlcv_data)
+        strategy.generate_signal(sample_ohlcv_data)
 
         # Second signal on same data should be HOLD
         signal2 = strategy.generate_signal(sample_ohlcv_data)
@@ -551,11 +549,11 @@ class TestStrategyIntegration:
             signal = strategy.generate_signal(window_data)
 
             if signal.signal == Signal.BUY and strategy.current_position is None:
-                position = strategy.enter_position(signal, size=0.1)
+                strategy.enter_position(signal, size=0.1)
                 positions_opened += 1
 
             elif signal.signal == Signal.SELL and strategy.current_position is not None:
-                exit_details = strategy.exit_position(
+                strategy.exit_position(
                     exit_price=signal.price, exit_timestamp=signal.timestamp, reason="Signal exit"
                 )
                 positions_closed += 1
@@ -566,7 +564,7 @@ class TestStrategyIntegration:
                 should_exit, reason = strategy.should_exit(current_price, strategy.current_position)
 
                 if should_exit:
-                    exit_details = strategy.exit_position(
+                    strategy.exit_position(
                         exit_price=current_price, exit_timestamp=signal.timestamp, reason=reason
                     )
                     positions_closed += 1

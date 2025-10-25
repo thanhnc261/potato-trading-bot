@@ -643,7 +643,7 @@ class RiskManager:
                     corr_value = self._correlation_matrix.loc[symbol, pos_symbol]
                     # pandas returns numpy scalar which mypy doesn't recognize as float-convertible
                     try:
-                        correlation = float(corr_value)  # type: ignore[arg-type]
+                        correlation = float(corr_value)
                     except (TypeError, ValueError):
                         correlation = 0.0
                     if abs(correlation) > 0.7:  # High correlation threshold
