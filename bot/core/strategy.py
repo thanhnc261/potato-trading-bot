@@ -304,7 +304,7 @@ class RSIStrategy(BaseStrategy):
         self.stop_loss_pct = self.config["stop_loss_pct"]
         self.take_profit_pct = self.config["take_profit_pct"]
 
-    def _calculate_rsi(self, data: pd.DataFrame) -> pd.Series[Any]:
+    def _calculate_rsi(self, data: pd.DataFrame) -> Any:
         """
         Calculate RSI indicator.
 
@@ -316,7 +316,7 @@ class RSIStrategy(BaseStrategy):
         """
         import ta
 
-        return ta.momentum.RSIIndicator(close=data["close"], window=self.rsi_period).rsi()  # type: ignore[no-any-return]
+        return ta.momentum.RSIIndicator(close=data["close"], window=self.rsi_period).rsi()
 
     def generate_signal(self, data: pd.DataFrame) -> StrategySignal:
         """
@@ -507,7 +507,7 @@ class MovingAverageCrossoverStrategy(BaseStrategy):
         self._prev_fast_ma: float | None = None
         self._prev_slow_ma: float | None = None
 
-    def _calculate_ma(self, data: pd.DataFrame, period: int) -> pd.Series[Any]:
+    def _calculate_ma(self, data: pd.DataFrame, period: int) -> Any:
         """
         Calculate moving average.
 
@@ -521,9 +521,9 @@ class MovingAverageCrossoverStrategy(BaseStrategy):
         import ta
 
         if self.ma_type == "ema":
-            return ta.trend.EMAIndicator(close=data["close"], window=period).ema_indicator()  # type: ignore[no-any-return]
+            return ta.trend.EMAIndicator(close=data["close"], window=period).ema_indicator()
         else:  # SMA
-            return ta.trend.SMAIndicator(close=data["close"], window=period).sma_indicator()  # type: ignore[no-any-return]
+            return ta.trend.SMAIndicator(close=data["close"], window=period).sma_indicator()
 
     def generate_signal(self, data: pd.DataFrame) -> StrategySignal:
         """
