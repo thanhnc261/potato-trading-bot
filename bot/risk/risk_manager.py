@@ -641,10 +641,11 @@ class RiskManager:
             for pos_symbol, pos_value in self._open_positions.items():
                 if pos_symbol in self._correlation_matrix.columns:
                     corr_value = self._correlation_matrix.loc[symbol, pos_symbol]
-                    # pandas returns numpy scalar which mypy doesn't recognize as float-convertible
+                    # Convert pandas/numpy scalar to Python float for type safety
                     try:
-                        correlation = float(corr_value)
-                    except (TypeError, ValueError):
+                        # Use item() to convert numpy scalar to Python scalar
+                        correlation = float(corr_value.item() if hasattr(corr_value, "item") else corr_value)  # type: ignore[arg-type]
+                    except (TypeError, ValueError, AttributeError):
                         correlation = 0.0
                     if abs(correlation) > 0.7:  # High correlation threshold
                         correlated_exposure += Decimal(str(pos_value))
