@@ -116,7 +116,9 @@ def demo_rsi_strategy():
         )
 
         # Simulate price movement and check exit conditions
-        take_profit_price = position.take_profit if position.take_profit else position.entry_price * 1.04
+        take_profit_price = (
+            position.take_profit if position.take_profit else position.entry_price * 1.04
+        )
         test_prices = [
             position.entry_price * 0.99,  # Small loss
             position.entry_price * 1.01,  # Small profit
