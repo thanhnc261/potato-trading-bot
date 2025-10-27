@@ -3,19 +3,19 @@
 Import tasks to vibe-kanban for Potato Trading Bot project.
 
 Usage:
-    python scripts/import_to_vibe_kanban.py <project_id>
+    python scripts/import_to_vibe_kanban.py <project_id> [--phase {phase1,phase2,all}]
 """
 
-import sys
+import argparse
 import requests
-from typing import List, Dict
+import sys
+from typing import Dict
 
-VIBE_KANBAN_API = "http://127.0.0.1:52718/api"
+VIBE_KANBAN_API = "http://127.0.0.1:57281/api"
 
-# Phase 1 Tasks
 PHASE_1_TASKS = [
     {
-        "title": "Setup Exchange Adapter",
+        "title": "BOT-01 - Setup Exchange Adapter",
         "description": """Implement Binance exchange adapter with robust error handling and testnet/mainnet support.
 
 **Acceptance Criteria**:
@@ -33,7 +33,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Market Data Streaming",
+        "title": "BOT-02 - Market Data Streaming",
         "description": """Implement real-time market data ingestion via WebSocket or REST polling.
 
 **Acceptance Criteria**:
@@ -51,7 +51,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Logging Infrastructure",
+        "title": "BOT-03 - Logging Infrastructure",
         "description": """Implement structured JSON logging with correlation IDs for trade lifecycle tracing.
 
 **Acceptance Criteria**:
@@ -69,7 +69,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "RiskManager - Pre-trade Checks",
+        "title": "BOT-04 - RiskManager - Pre-trade Checks",
         "description": """Implement comprehensive risk management with pre-trade validation checks.
 
 **Acceptance Criteria**:
@@ -95,7 +95,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Emergency Stop System",
+        "title": "BOT-05 - Emergency Stop System",
         "description": """Implement kill-switch system for catastrophic scenarios with automated triggers.
 
 **Acceptance Criteria**:
@@ -124,7 +124,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Basic Technical Strategy",
+        "title": "BOT-06 - Basic Technical Strategy",
         "description": """Implement simple rule-based strategy to test the trading pipeline.
 
 **Acceptance Criteria**:
@@ -146,7 +146,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Execution Orchestrator",
+        "title": "BOT-07 - Execution Orchestrator",
         "description": """Build order execution system that routes decisions to exchange and manages order lifecycle.
 
 **Acceptance Criteria**:
@@ -175,7 +175,7 @@ PHASE_1_TASKS = [
 """,
     },
     {
-        "title": "Data Quality Monitor",
+        "title": "BOT-08 - Data Quality Monitor",
         "description": """Validate market data quality before making trading decisions.
 
 **Acceptance Criteria**:
@@ -194,6 +194,97 @@ PHASE_1_TASKS = [
 """,
     },
 ]
+
+PHASE_2_TASKS = [
+    {
+        "title": "BOT-09 - Technical Analyzer Implementation",
+        "description": """Build comprehensive technical analysis module with multiple indicators.
+
+**Acceptance Criteria**:
+- [ ] Create `bot/core/technical_analyzer.py`
+- [ ] Integrate TA-Lib or `ta` library
+- [ ] Implement indicators: RSI, MACD, Bollinger Bands, MA20/50/200, ATR
+- [ ] Support multi-timeframe analysis (1h, 4h, 1d)
+- [ ] Pattern detection (support/resistance levels)
+- [ ] Efficient caching of indicator calculations
+- [ ] Tests comparing outputs to known values
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 3-4 days
+**Priority**: High
+**Phase**: Phase 2 - Traditional Strategy Expansion & Backtesting
+""",
+    },
+    {
+        "title": "BOT-10 - Backtesting Engine",
+        "description": """Build historical simulation engine with realistic slippage and latency modeling.
+
+**Acceptance Criteria**:
+- [ ] Create `bot/data/backtesting.py`
+- [ ] Load historical data from CSV/Parquet
+- [ ] Replay data bar-by-bar or tick-by-tick
+- [ ] Simulate order execution with slippage
+- [ ] Model execution delays
+- [ ] Calculate performance metrics (win rate, Sharpe, drawdown)
+- [ ] Support multiple strategies and symbols
+- [ ] Generate performance reports
+- [ ] CLI command: `python -m bot.cli backtest`
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 4-5 days
+**Priority**: High
+**Phase**: Phase 2 - Traditional Strategy Expansion & Backtesting
+""",
+    },
+    {
+        "title": "BOT-11 - Multi-Strategy Support",
+        "description": """Extend StrategyContext to support multiple concurrent strategies.
+
+**Acceptance Criteria**:
+- [ ] Create `bot/core/strategy_context.py`
+- [ ] Support multiple strategy instances
+- [ ] Per-strategy configuration
+- [ ] Isolated state per strategy
+- [ ] Strategy-level position tracking
+- [ ] Aggregated risk management across strategies
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 3 days
+**Priority**: Medium
+**Phase**: Phase 2 - Traditional Strategy Expansion & Backtesting
+""",
+    },
+    {
+        "title": "BOT-12 - Paper Trading Mode",
+        "description": """Implement simulated broker for paper trading.
+
+**Acceptance Criteria**:
+- [ ] Simulated portfolio tracking
+- [ ] Virtual order execution
+- [ ] Realistic fill simulation
+- [ ] Track P/L without real money
+- [ ] CLI command: `python -m bot.cli run --profile paper`
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 2-3 days
+**Priority**: High
+**Phase**: Phase 2 - Traditional Strategy Expansion & Backtesting
+""",
+    },
+]
+
+PHASE_DEFINITIONS = {
+    "phase1": {
+        "label": "Phase 1 - Foundation",
+        "tasks": PHASE_1_TASKS,
+    },
+    "phase2": {
+        "label": "Phase 2 - Traditional Strategy Expansion & Backtesting",
+        "tasks": PHASE_2_TASKS,
+    },
+}
+
+PHASE_SEQUENCE = ["phase1", "phase2"]
 
 
 def create_task(project_id: str, task: Dict) -> bool:
@@ -215,28 +306,89 @@ def create_task(project_id: str, task: Dict) -> bool:
         return False
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Import tasks to vibe-kanban for the Potato Trading Bot project."
+    )
+    parser.add_argument(
+        "project_id",
+        help="UUID of the target vibe-kanban project (create it first in the UI).",
+    )
+    parser.add_argument(
+        "--phase",
+        default="all",
+        help="Which phase to import (phase1, phase2, 1, 2, or all). Defaults to all.",
+    )
+    return parser.parse_args()
+
+
+def normalize_phase_name(raw_phase: str) -> str:
+    """Normalize user-supplied phase filters to canonical keys."""
+    if not raw_phase:
+        return "all"
+
+    value = raw_phase.strip().lower()
+    if value in {"all", "both"}:
+        return "all"
+
+    phase_aliases = {
+        "1": "phase1",
+        "phase1": "phase1",
+        "foundation": "phase1",
+        "2": "phase2",
+        "phase2": "phase2",
+        "traditional": "phase2",
+        "backtesting": "phase2",
+    }
+
+    return phase_aliases.get(value, "")
+
+
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python scripts/import_to_vibe_kanban.py <project_id>")
-        print("\nFirst, create a project in vibe-kanban:")
-        print("  Name: Potato Trading Bot")
-        print("  Git Repo: /Users/thanhnguyen/Dev/Coin/bot")
-        print("\nThen run this script with the project ID.")
+    args = parse_args()
+    project_id = args.project_id
+
+    phase_key = normalize_phase_name(args.phase)
+    if not phase_key:
+        valid_phases = ", ".join(["phase1", "phase2", "all"])
+        print(f"Unrecognized phase '{args.phase}'. Valid options: {valid_phases}.")
         sys.exit(1)
 
-    project_id = sys.argv[1]
+    phases_to_import = PHASE_SEQUENCE if phase_key == "all" else [phase_key]
 
-    print(f"Importing Phase 1 tasks to project {project_id}...")
-    print(f"Total tasks to import: {len(PHASE_1_TASKS)}\n")
+    total_tasks_requested = sum(
+        len(PHASE_DEFINITIONS[phase]["tasks"]) for phase in phases_to_import
+    )
 
-    success_count = 0
-    for task in PHASE_1_TASKS:
-        if create_task(project_id, task):
-            success_count += 1
+    print(
+        f"Importing {total_tasks_requested} task(s) to project {project_id} "
+        f"across {', '.join(PHASE_DEFINITIONS[phase]['label'] for phase in phases_to_import)}."
+    )
 
-    print(f"\n{'='*60}")
-    print(f"Import complete: {success_count}/{len(PHASE_1_TASKS)} tasks created")
-    print(f"{'='*60}")
+    overall_success = 0
+    for phase in phases_to_import:
+        definition = PHASE_DEFINITIONS[phase]
+        tasks = definition["tasks"]
+        label = definition["label"]
+
+        print(f"\n--- {label} ---")
+        print(f"Total tasks to import: {len(tasks)}\n")
+
+        phase_success = 0
+        for task in tasks:
+            if create_task(project_id, task):
+                phase_success += 1
+
+        overall_success += phase_success
+        print(
+            f"\nCompleted {phase_success}/{len(tasks)} task(s) for {label}."
+        )
+
+    print(f"\n{'=' * 60}")
+    print(
+        f"Import complete: {overall_success}/{total_tasks_requested} task(s) created"
+    )
+    print(f"{'=' * 60}")
 
 
 if __name__ == "__main__":

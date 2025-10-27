@@ -75,6 +75,7 @@ htmlcov/
 .dmypy.json
 dmypy.json
 .pyre/
+.ruff_cache/
 
 # Model files (large ML models)
 *.pkl
