@@ -1,0 +1,62 @@
+# Paper Trading Configuration
+# This configuration is used for simulated trading with virtual money
+
+name: "Potato Trading Bot - Paper Mode"
+version: "0.1.0"
+environment: "paper"
+
+# Logging configuration
+logging:
+  log_dir: "logs"
+  log_level: "INFO"
+  console_level: "INFO"
+  enable_json: true
+  enable_colors: true
+  rotation_when: "midnight"
+  rotation_interval: 1
+  backup_count: 30
+
+# Exchange configuration (used for market data)
+exchange:
+  name: "binance"
+  api_key: "dummy_key_for_paper_trading"
+  api_secret: "dummy_secret_for_paper_trading"
+  testnet: true
+  timeout: 30
+  rate_limit_per_second: 10
+
+# Risk management configuration
+risk:
+  max_position_size_pct: 0.10  # 10% of portfolio per position
+  max_total_exposure_pct: 0.50  # 50% total exposure
+  max_daily_loss_pct: 0.05  # 5% daily loss limit
+  max_slippage_pct: 0.01  # 1% max slippage
+  min_liquidity_ratio: 0.01  # Position must be < 1% of daily volume
+  var_confidence: 0.95  # 95% VaR confidence
+  enable_emergency_stop: true
+
+# Strategy configuration
+strategy:
+  type: "rsi"  # Available: rsi, ma_crossover
+  enabled: true
+  parameters:
+    # RSI Strategy Parameters
+    rsi_period: 14
+    oversold_threshold: 30
+    overbought_threshold: 70
+    stop_loss_pct: 0.02  # 2% stop loss
+    take_profit_pct: 0.04  # 4% take profit
+    position_size_pct: 0.10  # 10% of capital per trade
+
+# Alternative: MA Crossover Strategy
+# Uncomment to use:
+# strategy:
+#   type: "ma_crossover"
+#   enabled: true
+#   parameters:
+#     fast_period: 20
+#     slow_period: 50
+#     ma_type: "sma"  # sma or ema
+#     stop_loss_pct: 0.02
+#     take_profit_pct: 0.04
+#     position_size_pct: 0.10

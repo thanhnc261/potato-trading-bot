@@ -238,6 +238,135 @@ def backtest(
 
 
 @app.command()
+def run(
+    config: Annotated[
+        Path,
+        typer.Option(
+            "--config",
+            "-c",
+            help="Path to bot configuration file",
+            exists=True,
+            file_okay=True,
+            dir_okay=False,
+            readable=True,
+        ),
+    ],
+    profile: Annotated[
+        str,
+        typer.Option(
+            "--profile",
+            "-p",
+            help="Trading profile: paper (simulated), live (real trading)",
+        ),
+    ] = "paper",
+    symbols: Annotated[
+        str,
+        typer.Option(
+            "--symbols",
+            "-s",
+            help="Comma-separated list of trading symbols",
+        ),
+    ] = "BTCUSDT",
+    capital: Annotated[
+        float,
+        typer.Option(
+            "--capital",
+            help="Initial capital (for paper trading)",
+        ),
+    ] = 10000.0,
+    max_runtime: Annotated[
+        int | None,
+        typer.Option(
+            "--max-runtime",
+            help="Maximum runtime in seconds",
+        ),
+    ] = None,
+) -> None:
+    """
+    Run the bot with specified trading profile.
+
+    Profiles:
+    - paper: Simulated trading with virtual money
+    - live: Real trading with actual funds (not yet implemented)
+
+    Examples:
+        # Run paper trading
+        python -m bot.cli run --profile paper --config config.yaml
+
+        # Run with custom symbols and capital
+        python -m bot.cli run --profile paper -c config.yaml -s BTCUSDT,ETHUSDT --capital 50000
+    """
+    if profile == "paper":
+        # Delegate to paper trading implementation
+        import asyncio
+
+        import yaml
+
+        from bot.config.models import BotConfig
+        from bot.execution.paper_trading import PaperTradingConfig, run_paper_trading
+
+        try:
+            # Load configuration
+            with open(config) as f:
+                config_data = yaml.safe_load(f)
+
+            bot_config = BotConfig(**config_data)
+
+            # Parse symbols
+            symbol_list = [s.strip() for s in symbols.split(",")]
+
+            console.print(f"\n[bold cyan]Running Bot - Profile: {profile.upper()}[/bold cyan]\n")
+            console.print(f"[yellow]Configuration:[/yellow] {config}")
+            console.print(f"[yellow]Symbols:[/yellow] {', '.join(symbol_list)}")
+            console.print(f"[yellow]Initial Capital:[/yellow] ${capital:,.2f} USDT")
+            console.print(f"[yellow]Strategy:[/yellow] {bot_config.strategy.type.value}")
+
+            if max_runtime:
+                console.print(
+                    f"[yellow]Max Runtime:[/yellow] {max_runtime}s ({max_runtime / 60:.1f} min)"
+                )
+            else:
+                console.print("[yellow]Max Runtime:[/yellow] Unlimited (Ctrl+C to stop)")
+
+            console.print()
+
+            # Create paper trading config
+            paper_config = PaperTradingConfig(
+                bot_config=bot_config,
+                symbols=symbol_list,
+                initial_capital=capital,
+                update_interval=1.0,
+                performance_report_interval=60.0,
+                max_runtime_seconds=float(max_runtime) if max_runtime else None,
+                enable_risk_management=True,
+            )
+
+            console.print("[green]Starting bot... Press Ctrl+C to stop[/green]\n")
+
+            asyncio.run(run_paper_trading(paper_config))
+
+            console.print("\n[bold green]Bot Session Completed![/bold green]")
+
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Bot stopped by user[/yellow]")
+        except Exception as e:
+            console.print(f"\n[bold red]Error:[/bold red] {e}")
+            import traceback
+
+            console.print(f"\n[red]{traceback.format_exc()}[/red]")
+            raise typer.Exit(code=1)
+
+    elif profile == "live":
+        console.print("[bold red]Error:[/bold red] Live trading is not yet implemented")
+        console.print("[yellow]Use --profile paper for simulated trading[/yellow]")
+        raise typer.Exit(code=1)
+    else:
+        console.print(f"[bold red]Error:[/bold red] Unknown profile: {profile}")
+        console.print("[yellow]Valid profiles: paper, live[/yellow]")
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def live(
     config: Annotated[
         Path,
@@ -259,6 +388,7 @@ def live(
     """
     console.print("[yellow]Live trading not yet implemented[/yellow]")
     console.print(f"Would load config from: {config}")
+    console.print("\n[bold]Tip:[/bold] Use 'bot run --profile paper' for simulated trading")
 
 
 @app.command()
@@ -275,14 +405,122 @@ def paper(
             readable=True,
         ),
     ],
+    symbols: Annotated[
+        str,
+        typer.Option(
+            "--symbols",
+            "-s",
+            help="Comma-separated list of trading symbols (e.g., 'BTCUSDT,ETHUSDT')",
+        ),
+    ] = "BTCUSDT",
+    capital: Annotated[
+        float,
+        typer.Option(
+            "--capital",
+            help="Initial virtual capital in USDT",
+        ),
+    ] = 10000.0,
+    interval: Annotated[
+        float,
+        typer.Option(
+            "--interval",
+            help="Market data update interval in seconds",
+        ),
+    ] = 1.0,
+    max_runtime: Annotated[
+        int | None,
+        typer.Option(
+            "--max-runtime",
+            help="Maximum runtime in seconds (optional)",
+        ),
+    ] = None,
+    profile: Annotated[
+        str,
+        typer.Option(
+            "--profile",
+            help="Trading profile (paper, aggressive, conservative)",
+        ),
+    ] = "paper",
 ) -> None:
     """
     Run the bot in paper trading mode.
 
-    This command starts the bot for paper trading (simulated) using the specified configuration.
+    This command starts the bot for paper trading (simulated) using live market data
+    but executing trades virtually without real money. Perfect for testing strategies.
+
+    Examples:
+        # Basic paper trading with default settings
+        bot paper --config config.yaml
+
+        # Paper trade multiple symbols with custom capital
+        bot paper -c config.yaml --symbols BTCUSDT,ETHUSDT --capital 50000
+
+        # Run for specific duration
+        bot paper -c config.yaml --max-runtime 3600  # Run for 1 hour
     """
-    console.print("[yellow]Paper trading not yet implemented[/yellow]")
-    console.print(f"Would load config from: {config}")
+    import asyncio
+
+    import yaml
+
+    from bot.config.models import BotConfig
+    from bot.execution.paper_trading import PaperTradingConfig, run_paper_trading
+
+    try:
+        # Load configuration
+        with open(config) as f:
+            config_data = yaml.safe_load(f)
+
+        bot_config = BotConfig(**config_data)
+
+        # Parse symbols
+        symbol_list = [s.strip() for s in symbols.split(",")]
+
+        console.print("\n[bold cyan]Starting Paper Trading Session[/bold cyan]\n")
+        console.print(f"[yellow]Configuration:[/yellow] {config}")
+        console.print(f"[yellow]Profile:[/yellow] {profile}")
+        console.print(f"[yellow]Symbols:[/yellow] {', '.join(symbol_list)}")
+        console.print(f"[yellow]Initial Capital:[/yellow] ${capital:,.2f} USDT")
+        console.print(f"[yellow]Update Interval:[/yellow] {interval}s")
+        console.print(f"[yellow]Strategy:[/yellow] {bot_config.strategy.type.value}")
+
+        if max_runtime:
+            console.print(
+                f"[yellow]Max Runtime:[/yellow] {max_runtime}s ({max_runtime / 60:.1f} min)"
+            )
+        else:
+            console.print("[yellow]Max Runtime:[/yellow] Unlimited (Ctrl+C to stop)")
+
+        console.print()
+
+        # Create paper trading config
+        paper_config = PaperTradingConfig(
+            bot_config=bot_config,
+            symbols=symbol_list,
+            initial_capital=capital,
+            update_interval=interval,
+            performance_report_interval=60.0,
+            max_runtime_seconds=float(max_runtime) if max_runtime else None,
+            enable_risk_management=True,
+        )
+
+        # Run paper trading
+        console.print("[green]Starting paper trading... Press Ctrl+C to stop[/green]\n")
+
+        asyncio.run(run_paper_trading(paper_config))
+
+        console.print("\n[bold green]Paper Trading Session Completed![/bold green]")
+
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Paper trading stopped by user[/yellow]")
+    except FileNotFoundError as e:
+        console.print(f"\n[bold red]Error:[/bold red] Configuration file not found: {e}")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"\n[bold red]Error:[/bold red] {e}")
+        import traceback
+
+        console.print(f"\n[red]{traceback.format_exc()}[/red]")
+        raise typer.Exit(code=1)
 
 
 def main() -> None:
