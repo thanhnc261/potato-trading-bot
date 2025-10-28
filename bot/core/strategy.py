@@ -27,6 +27,27 @@ from structlog import get_logger
 logger = get_logger(__name__)
 
 
+def _convert_timestamp_to_ms(timestamp: Any) -> int:
+    """
+    Convert timestamp to milliseconds integer.
+
+    Args:
+        timestamp: Timestamp in various formats (int, pandas Timestamp, datetime)
+
+    Returns:
+        Timestamp in milliseconds as integer
+    """
+    if isinstance(timestamp, (int, float)):
+        return int(timestamp)
+    elif isinstance(timestamp, pd.Timestamp):
+        return int(timestamp.timestamp() * 1000)
+    elif hasattr(timestamp, "timestamp"):
+        # datetime-like object
+        return int(timestamp.timestamp() * 1000)
+    else:
+        return 0
+
+
 class Signal(str, Enum):
     """Trading signal types"""
 
@@ -336,7 +357,11 @@ class RSIStrategy(BaseStrategy):
             )
             return StrategySignal(
                 signal=Signal.HOLD,
-                timestamp=int(data["timestamp"].iloc[-1]) if "timestamp" in data.columns else 0,
+                timestamp=(
+                    _convert_timestamp_to_ms(data["timestamp"].iloc[-1])
+                    if "timestamp" in data.columns
+                    else 0
+                ),
                 price=float(data["close"].iloc[-1]),
                 confidence=0.0,
                 metadata={"reason": "insufficient_data"},
@@ -347,7 +372,11 @@ class RSIStrategy(BaseStrategy):
         rsi_values = self._calculate_rsi(data)
         current_rsi = float(rsi_values.iloc[-1])
         current_price = float(data["close"].iloc[-1])
-        timestamp = int(data["timestamp"].iloc[-1]) if "timestamp" in data.columns else 0
+        timestamp = (
+            _convert_timestamp_to_ms(data["timestamp"].iloc[-1])
+            if "timestamp" in data.columns
+            else 0
+        )
 
         # Generate signal based on RSI thresholds
         if current_rsi < self.oversold_threshold:
@@ -543,7 +572,11 @@ class MovingAverageCrossoverStrategy(BaseStrategy):
             )
             return StrategySignal(
                 signal=Signal.HOLD,
-                timestamp=int(data["timestamp"].iloc[-1]) if "timestamp" in data.columns else 0,
+                timestamp=(
+                    _convert_timestamp_to_ms(data["timestamp"].iloc[-1])
+                    if "timestamp" in data.columns
+                    else 0
+                ),
                 price=float(data["close"].iloc[-1]),
                 confidence=0.0,
                 metadata={"reason": "insufficient_data"},
@@ -557,7 +590,11 @@ class MovingAverageCrossoverStrategy(BaseStrategy):
         current_fast_ma = float(fast_ma.iloc[-1])
         current_slow_ma = float(slow_ma.iloc[-1])
         current_price = float(data["close"].iloc[-1])
-        timestamp = int(data["timestamp"].iloc[-1]) if "timestamp" in data.columns else 0
+        timestamp = (
+            _convert_timestamp_to_ms(data["timestamp"].iloc[-1])
+            if "timestamp" in data.columns
+            else 0
+        )
 
         # Detect crossover
         signal = Signal.HOLD
