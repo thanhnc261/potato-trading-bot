@@ -56,13 +56,11 @@ class TestTelegramNotifier:
         # Setup mock bot
         mock_bot = AsyncMock()
 
-        # Mock telegram module
-        with patch.dict('sys.modules', {'telegram': MagicMock(Bot=lambda token: mock_bot), 'telegram.error': MagicMock()}):
-            with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+        # Mock Bot class directly
+        with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
                 # Create notifier
                 notifier = TelegramNotifier(telegram_config)
-                notifier.bot = mock_bot
-                notifier.enabled = True
 
                 # Send alert
                 await notifier.send_alert(emergency_event)
@@ -75,11 +73,9 @@ class TestTelegramNotifier:
         """Test Telegram message formatting."""
         mock_bot = AsyncMock()
 
-        with patch.dict('sys.modules', {'telegram': MagicMock(Bot=lambda token: mock_bot), 'telegram.error': MagicMock()}):
-            with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+        with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
                 notifier = TelegramNotifier(telegram_config)
-                notifier.bot = mock_bot
-                notifier.enabled = True
 
                 await notifier.send_alert(emergency_event)
 
@@ -109,10 +105,9 @@ class TestTelegramNotifier:
         await notifier.send_alert(emergency_event)
 
     @pytest.mark.asyncio
-    async def test_telegram_send_error_handling(
-        self, telegram_config, emergency_event
-    ):
+    async def test_telegram_send_error_handling(self, telegram_config, emergency_event):
         """Test error handling during Telegram send."""
+
         # Create mock TelegramError
         class MockTelegramError(Exception):
             pass
@@ -120,14 +115,13 @@ class TestTelegramNotifier:
         mock_bot = AsyncMock()
         mock_bot.send_message.side_effect = MockTelegramError("Network error")
 
-        with patch.dict('sys.modules', {'telegram': MagicMock(Bot=lambda token: mock_bot), 'telegram.error': MagicMock(TelegramError=MockTelegramError)}):
-            with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-                notifier = TelegramNotifier(telegram_config)
-                notifier.bot = mock_bot
-                notifier.enabled = True
+        with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
+                with patch("bot.risk.notifications.TelegramError", MockTelegramError):
+                    notifier = TelegramNotifier(telegram_config)
 
-                # Should not raise exception
-                await notifier.send_alert(emergency_event)
+                    # Should not raise exception
+                    await notifier.send_alert(emergency_event)
 
 
 class TestEmailNotifier:
@@ -273,18 +267,13 @@ class TestNotificationManager:
         mock_smtp = MagicMock()
         mock_smtp_class.return_value.__enter__.return_value = mock_smtp
 
-        with patch.dict('sys.modules', {'telegram': MagicMock(Bot=lambda token: mock_bot), 'telegram.error': MagicMock()}):
-            with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+        with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
                 # Create manager with both notifiers
                 manager = NotificationManager(
                     telegram_config=telegram_config,
                     email_config=email_config,
                 )
-
-                # Set the bot on telegram notifier
-                if len(manager.notifiers) > 0 and hasattr(manager.notifiers[0], 'bot'):
-                    manager.notifiers[0].bot = mock_bot
-                    manager.notifiers[0].enabled = True
 
                 # Send alert
                 await manager.send_alert(emergency_event)
@@ -307,14 +296,9 @@ class TestNotificationManager:
         """Test with only Telegram configured."""
         mock_bot = AsyncMock()
 
-        with patch.dict('sys.modules', {'telegram': MagicMock(Bot=lambda token: mock_bot), 'telegram.error': MagicMock()}):
-            with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+        with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
+            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
                 manager = NotificationManager(telegram_config=telegram_config)
-
-                # Set the bot on telegram notifier
-                if len(manager.notifiers) > 0 and hasattr(manager.notifiers[0], 'bot'):
-                    manager.notifiers[0].bot = mock_bot
-                    manager.notifiers[0].enabled = True
 
                 await manager.send_alert(emergency_event)
 

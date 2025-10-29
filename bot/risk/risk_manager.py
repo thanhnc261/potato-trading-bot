@@ -644,7 +644,9 @@ class RiskManager:
                     # Convert pandas/numpy scalar to Python float for type safety
                     try:
                         # Use item() to convert numpy scalar to Python scalar
-                        correlation = float(corr_value.item() if hasattr(corr_value, "item") else corr_value)
+                        correlation = float(
+                            corr_value.item() if hasattr(corr_value, "item") else corr_value
+                        )
                     except (TypeError, ValueError, AttributeError):
                         correlation = 0.0
                     if abs(correlation) > 0.7:  # High correlation threshold

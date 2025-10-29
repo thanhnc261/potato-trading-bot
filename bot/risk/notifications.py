@@ -17,12 +17,14 @@ from email.mime.text import MIMEText
 import structlog
 
 try:
-    from telegram import Bot  # type: ignore
-    from telegram.error import TelegramError  # type: ignore
+    from telegram import Bot  # type: ignore[import-not-found]
+    from telegram.error import TelegramError  # type: ignore[import-not-found]
 
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
+    Bot = None
+    TelegramError = Exception
 
 from bot.risk.emergency_stop import EmergencyEvent
 
