@@ -18,19 +18,19 @@ from typing import TYPE_CHECKING, Any
 import structlog
 
 if TYPE_CHECKING:
-    from telegram import Bot as TelegramBot  # type: ignore[import-not-found]
-    from telegram.error import TelegramError as TelegramErrorType  # type: ignore[import-not-found]
+    from telegram import Bot as TelegramBot
+    from telegram.error import TelegramError as TelegramErrorType
 
 try:
-    from telegram import Bot as TelegramBot  # type: ignore[no-redef]
-    from telegram.error import TelegramError as TelegramErrorType  # type: ignore[no-redef]
+    from telegram import Bot as TelegramBot
+    from telegram.error import TelegramError as TelegramErrorType
 
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
     if not TYPE_CHECKING:
-        TelegramBot = Any  # type: ignore[misc,assignment]
-        TelegramErrorType = Exception  # type: ignore[misc,assignment]
+        TelegramBot = Any  # type: ignore[assignment]
+        TelegramErrorType = Exception  # type: ignore[assignment]
 
 from bot.risk.emergency_stop import EmergencyEvent
 

@@ -24,8 +24,8 @@ from enum import Enum
 from typing import Any
 
 import structlog
-from anthropic import AsyncAnthropic  # type: ignore[import-not-found]
-from openai import AsyncOpenAI  # type: ignore[import-not-found]
+from anthropic import AsyncAnthropic
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field, field_validator
 
 logger = structlog.get_logger(__name__)
