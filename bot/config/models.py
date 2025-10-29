@@ -9,6 +9,7 @@ This module defines type-safe configuration models using Pydantic for:
 - LLM provider settings
 """
 
+from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 
@@ -197,6 +198,86 @@ class StrategyConfig(BaseModel):
         use_enum_values = True
 
 
+class LLMProviderType(str, Enum):
+    """Supported LLM provider types."""
+
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+    LOCAL = "local"
+
+
+class LLMProviderConfig(BaseModel):
+    """
+    Configuration for an LLM provider.
+
+    Attributes:
+        type: Provider type (openai, anthropic, local)
+        api_key: API key for the provider
+        model: Model name to use
+        max_tokens: Maximum tokens in completion
+        temperature: Sampling temperature (0.0-2.0)
+        timeout_seconds: Request timeout in seconds
+        cost_per_1k_prompt_tokens: Cost per 1000 prompt tokens in USD
+        cost_per_1k_completion_tokens: Cost per 1000 completion tokens in USD
+        enabled: Whether provider is enabled
+        priority: Provider priority (lower number = higher priority)
+        base_url: Custom base URL for API (optional)
+    """
+
+    type: LLMProviderType = Field(description="Provider type")
+    api_key: str = Field(description="API key")
+    model: str = Field(description="Model name")
+    max_tokens: int = Field(default=1000, ge=1, le=100000)
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    timeout_seconds: int = Field(default=30, ge=1, le=300)
+    cost_per_1k_prompt_tokens: Decimal = Field(default=Decimal("0.0"))
+    cost_per_1k_completion_tokens: Decimal = Field(default=Decimal("0.0"))
+    enabled: bool = Field(default=True)
+    priority: int = Field(default=0, ge=0)
+    base_url: str | None = Field(default=None)
+
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v: str) -> str:
+        """Validate API key is not empty."""
+        if not v or v.strip() == "":
+            raise ValueError("API key cannot be empty")
+        return v
+
+    class Config:
+        """Pydantic config."""
+
+        use_enum_values = True
+
+
+class LLMConfig(BaseModel):
+    """
+    LLM manager configuration.
+
+    Attributes:
+        providers: List of provider configurations
+        monthly_budget_usd: Monthly budget limit in USD
+        cache_ttl_seconds: Cache TTL in seconds (default 1 hour)
+        enable_caching: Whether to enable response caching
+        fallback_enabled: Whether to enable fallback chain
+        circuit_breaker_enabled: Whether to enable circuit breaker
+        circuit_breaker_threshold: Failures before opening circuit
+        circuit_breaker_timeout: Seconds before attempting recovery
+    """
+
+    providers: list[LLMProviderConfig] = Field(
+        default_factory=list,
+        description="Provider configurations",
+    )
+    monthly_budget_usd: Decimal = Field(default=Decimal("100.0"), ge=Decimal("0.0"))
+    cache_ttl_seconds: int = Field(default=3600, ge=0)  # 1 hour default
+    enable_caching: bool = Field(default=True)
+    fallback_enabled: bool = Field(default=True)
+    circuit_breaker_enabled: bool = Field(default=True)
+    circuit_breaker_threshold: int = Field(default=5, ge=1)
+    circuit_breaker_timeout: int = Field(default=60, ge=1)
+
+
 class BotConfig(BaseModel):
     """
     Main bot configuration.
@@ -218,6 +299,7 @@ class BotConfig(BaseModel):
     exchange: ExchangeConfig | None = None
     risk: RiskConfig = Field(default_factory=RiskConfig)
     strategy: StrategyConfig = Field(default_factory=StrategyConfig)
+    llm: LLMConfig | None = None
 
     @field_validator("environment")
     @classmethod

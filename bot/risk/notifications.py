@@ -13,16 +13,19 @@ import smtplib
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Any
 
 import structlog
 
 try:
-    from telegram import Bot
-    from telegram.error import TelegramError
+    from telegram import Bot as TelegramBot
+    from telegram.error import TelegramError as TelegramErrorType
 
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
+    TelegramBot = Any  # type: ignore[assignment,misc]
+    TelegramErrorType = Exception  # type: ignore[assignment,misc]
 
 from bot.risk.emergency_stop import EmergencyEvent
 
@@ -97,7 +100,7 @@ class TelegramNotifier:
         self.enabled = config.enabled and bool(config.bot_token)
 
         if self.enabled:
-            self.bot = Bot(token=config.bot_token)
+            self.bot = TelegramBot(token=config.bot_token)
             logger.info("telegram_notifier_initialized", chat_ids=config.chat_ids)
         else:
             logger.warning("telegram_notifier_disabled")
@@ -150,7 +153,7 @@ class TelegramNotifier:
             )
             logger.debug("telegram_message_sent", chat_id=chat_id)
 
-        except TelegramError as e:
+        except TelegramErrorType as e:
             logger.error("telegram_send_error", chat_id=chat_id, error=str(e))
             raise
 

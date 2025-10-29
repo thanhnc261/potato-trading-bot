@@ -1,0 +1,73 @@
+# LLM Manager Configuration Example
+# This file demonstrates how to configure multiple LLM providers with fallback chain
+
+llm:
+  # Monthly budget limit in USD
+  monthly_budget_usd: 100.0
+
+  # Response caching configuration
+  cache_ttl_seconds: 3600  # 1 hour
+  enable_caching: true
+
+  # Fallback chain enabled
+  fallback_enabled: true
+
+  # Circuit breaker configuration
+  circuit_breaker_enabled: true
+  circuit_breaker_threshold: 5  # Open circuit after 5 consecutive failures
+  circuit_breaker_timeout: 60  # Wait 60 seconds before retry
+
+  # Provider configurations (ordered by priority)
+  providers:
+    # Primary: OpenAI GPT-4
+    - type: "openai"
+      api_key: "${OPENAI_API_KEY}"
+      model: "gpt-4-turbo-preview"
+      max_tokens: 2000
+      temperature: 0.7
+      timeout_seconds: 30
+      cost_per_1k_prompt_tokens: 0.01  # $0.01 per 1K prompt tokens
+      cost_per_1k_completion_tokens: 0.03  # $0.03 per 1K completion tokens
+      enabled: true
+      priority: 0  # Highest priority
+      base_url: null  # Use default OpenAI API
+
+    # Secondary: OpenAI GPT-3.5 Turbo (fallback)
+    - type: "openai"
+      api_key: "${OPENAI_API_KEY}"
+      model: "gpt-3.5-turbo"
+      max_tokens: 2000
+      temperature: 0.7
+      timeout_seconds: 30
+      cost_per_1k_prompt_tokens: 0.0005  # $0.0005 per 1K prompt tokens
+      cost_per_1k_completion_tokens: 0.0015  # $0.0015 per 1K completion tokens
+      enabled: true
+      priority: 1
+      base_url: null
+
+    # Tertiary: Anthropic Claude (fallback)
+    - type: "anthropic"
+      api_key: "${ANTHROPIC_API_KEY}"
+      model: "claude-3-sonnet-20240229"
+      max_tokens: 2000
+      temperature: 0.7
+      timeout_seconds: 30
+      cost_per_1k_prompt_tokens: 0.003  # $0.003 per 1K prompt tokens
+      cost_per_1k_completion_tokens: 0.015  # $0.015 per 1K completion tokens
+      enabled: true
+      priority: 2
+      base_url: null  # Use default Anthropic API
+
+    # Local model (optional, lowest priority)
+    # Uncomment to enable local model fallback
+    # - type: "local"
+    #   api_key: "not-required-for-local"
+    #   model: "llama-2-7b"
+    #   max_tokens: 2000
+    #   temperature: 0.7
+    #   timeout_seconds: 60
+    #   cost_per_1k_prompt_tokens: 0.0  # Free for local
+    #   cost_per_1k_completion_tokens: 0.0
+    #   enabled: false
+    #   priority: 3
+    #   base_url: "http://localhost:11434"  # Ollama default
