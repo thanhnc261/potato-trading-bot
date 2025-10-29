@@ -13,13 +13,9 @@ import smtplib
 from dataclasses import dataclass
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import structlog
-
-if TYPE_CHECKING:
-    from telegram import Bot as TelegramBot
-    from telegram.error import TelegramError as TelegramErrorType
 
 try:
     from telegram import Bot as TelegramBot
@@ -28,9 +24,8 @@ try:
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
-    if not TYPE_CHECKING:
-        TelegramBot = Any  # type: ignore[assignment]
-        TelegramErrorType = Exception  # type: ignore[assignment]
+    TelegramBot = Any  # type: ignore[assignment,misc]
+    TelegramErrorType = Exception  # type: ignore[assignment,misc]
 
 from bot.risk.emergency_stop import EmergencyEvent
 
