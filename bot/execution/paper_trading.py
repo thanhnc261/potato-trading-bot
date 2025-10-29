@@ -129,11 +129,16 @@ class PaperTradingRunner:
             symbol: [] for symbol in config.symbols
         }
 
+        strategy_type = (
+            self.bot_config.strategy.type
+            if isinstance(self.bot_config.strategy.type, str)
+            else self.bot_config.strategy.type.value
+        )
         logger.info(
             "paper_trading_runner_initialized",
             symbols=config.symbols,
             initial_capital=config.initial_capital,
-            strategy=self.bot_config.strategy.type.value,
+            strategy=strategy_type,
             risk_management_enabled=config.enable_risk_management,
         )
 
@@ -169,15 +174,20 @@ class PaperTradingRunner:
             ValueError: If strategy type is not recognized
         """
         strategy_config = self.bot_config.strategy
+        strategy_type = (
+            strategy_config.type
+            if isinstance(strategy_config.type, str)
+            else strategy_config.type.value
+        )
 
-        if strategy_config.type.value == "rsi":
+        if strategy_type == "rsi":
             return RSIStrategy(config=strategy_config.parameters)
-        elif strategy_config.type.value == "ma_crossover":
+        elif strategy_type == "ma_crossover":
             from bot.core.strategy import MovingAverageCrossoverStrategy
 
             return MovingAverageCrossoverStrategy(config=strategy_config.parameters)
         else:
-            raise ValueError(f"Unknown strategy type: {strategy_config.type}")
+            raise ValueError(f"Unknown strategy type: {strategy_type}")
 
     async def start(self) -> None:
         """
@@ -263,6 +273,18 @@ class PaperTradingRunner:
 
         logger.info("cleanup_complete")
 
+    def _normalize_symbol_to_exchange_format(self, symbol: str) -> str:
+        """
+        Convert symbol from normalized format (BTC/USDT) to exchange format (BTCUSDT).
+
+        Args:
+            symbol: Symbol in normalized format (e.g., 'BTC/USDT')
+
+        Returns:
+            Symbol in exchange format (e.g., 'BTCUSDT')
+        """
+        return symbol.replace("/", "")
+
     def _on_market_tick(self, tick: MarketTick) -> None:
         """
         Callback for market data updates.
@@ -273,12 +295,15 @@ class PaperTradingRunner:
         Args:
             tick: Market tick data
         """
-        # Update exchange with current price
-        self.exchange.update_market_price(tick.symbol, Decimal(str(tick.price)))
+        # Convert symbol to exchange format (BTC/USDT -> BTCUSDT)
+        exchange_symbol = self._normalize_symbol_to_exchange_format(tick.symbol)
 
-        # Add to market data buffer
-        if tick.symbol in self.market_data_buffer:
-            self.market_data_buffer[tick.symbol].append(
+        # Update exchange with current price (using exchange format)
+        self.exchange.update_market_price(exchange_symbol, Decimal(str(tick.price)))
+
+        # Add to market data buffer (using exchange format)
+        if exchange_symbol in self.market_data_buffer:
+            self.market_data_buffer[exchange_symbol].append(
                 {
                     "timestamp": tick.timestamp,
                     "open": tick.open or tick.price,
@@ -290,8 +315,10 @@ class PaperTradingRunner:
             )
 
             # Limit buffer size to last 1000 ticks
-            if len(self.market_data_buffer[tick.symbol]) > 1000:
-                self.market_data_buffer[tick.symbol] = self.market_data_buffer[tick.symbol][-1000:]
+            if len(self.market_data_buffer[exchange_symbol]) > 1000:
+                self.market_data_buffer[exchange_symbol] = self.market_data_buffer[exchange_symbol][
+                    -1000:
+                ]
 
     async def _trading_loop(self) -> None:
         """
@@ -588,11 +615,16 @@ class PaperTradingRunner:
                 )
 
         # Add additional metadata
+        strategy_type = (
+            self.bot_config.strategy.type
+            if isinstance(self.bot_config.strategy.type, str)
+            else self.bot_config.strategy.type.value
+        )
         report: dict[str, Any] = {
             "config": {
                 "symbols": self.config.symbols,
                 "initial_capital": self.config.initial_capital,
-                "strategy": self.bot_config.strategy.type.value,
+                "strategy": strategy_type,
                 "strategy_params": self.bot_config.strategy.parameters,
                 "risk_management_enabled": self.config.enable_risk_management,
             },

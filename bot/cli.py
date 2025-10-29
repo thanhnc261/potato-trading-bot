@@ -319,7 +319,12 @@ def run(
             console.print(f"[yellow]Configuration:[/yellow] {config}")
             console.print(f"[yellow]Symbols:[/yellow] {', '.join(symbol_list)}")
             console.print(f"[yellow]Initial Capital:[/yellow] ${capital:,.2f} USDT")
-            console.print(f"[yellow]Strategy:[/yellow] {bot_config.strategy.type.value}")
+            strategy_type = (
+                bot_config.strategy.type
+                if isinstance(bot_config.strategy.type, str)
+                else bot_config.strategy.type.value
+            )
+            console.print(f"[yellow]Strategy:[/yellow] {strategy_type}")
 
             if max_runtime:
                 console.print(
@@ -481,7 +486,12 @@ def paper(
         console.print(f"[yellow]Symbols:[/yellow] {', '.join(symbol_list)}")
         console.print(f"[yellow]Initial Capital:[/yellow] ${capital:,.2f} USDT")
         console.print(f"[yellow]Update Interval:[/yellow] {interval}s")
-        console.print(f"[yellow]Strategy:[/yellow] {bot_config.strategy.type.value}")
+        strategy_type = (
+            bot_config.strategy.type
+            if isinstance(bot_config.strategy.type, str)
+            else bot_config.strategy.type.value
+        )
+        console.print(f"[yellow]Strategy:[/yellow] {strategy_type}")
 
         if max_runtime:
             console.print(

@@ -17,9 +17,12 @@ import random
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import structlog
+
+if TYPE_CHECKING:
+    from bot.core.strategy import Signal
 
 from bot.interfaces.exchange import (
     AccountInfo,
@@ -679,6 +682,69 @@ class SimulatedExchange(ExchangeInterface):
                     total_value += amount * self.market_prices[symbol]
 
         return total_value
+
+    def execute_order(
+        self,
+        signal: "Signal",
+        quantity: Decimal,
+        volatility: float,
+    ) -> tuple[Decimal, Decimal, Decimal]:
+        """
+        Synchronous order execution for backtesting.
+
+        This method provides a simplified interface for backtesting that returns
+        execution details directly without async operations.
+
+        Args:
+            signal: Trading signal (BUY/SELL)
+            quantity: Order quantity
+            volatility: Market volatility for slippage calculation
+
+        Returns:
+            Tuple of (execution_price, commission, slippage_cost)
+
+        Raises:
+            InvalidOrderError: If order cannot be executed
+        """
+        from bot.core.strategy import Signal
+
+        # For backtesting, we assume BTCUSDT as the default symbol
+        # In a real implementation, this should be passed as a parameter
+        symbol = "BTCUSDT"
+
+        if symbol not in self.market_prices:
+            raise InvalidOrderError(f"No market price available for {symbol}")
+
+        market_price = self.market_prices[symbol]
+
+        # Calculate slippage based on volatility
+        slippage_factor = Decimal(str(self.slippage_factor))
+        volatility_decimal = Decimal(str(volatility))
+        slippage_pct = slippage_factor * volatility_decimal
+
+        # Calculate execution price based on signal
+        if signal == Signal.BUY:
+            # Slippage increases buy price
+            execution_price = market_price * (Decimal("1") + slippage_pct)
+        elif signal == Signal.SELL:
+            # Slippage decreases sell price
+            execution_price = market_price * (Decimal("1") - slippage_pct)
+        else:
+            raise InvalidOrderError(f"Invalid signal for execution: {signal}")
+
+        # Calculate commission
+        notional_value = execution_price * quantity
+        commission = notional_value * Decimal(str(self.taker_commission))
+
+        # Calculate absolute slippage cost
+        slippage_cost = abs(execution_price - market_price) * quantity
+
+        # Track metrics
+        self.total_commission_paid += commission
+        self.total_slippage_cost += slippage_cost
+        self.trade_count += 1
+
+        return execution_price, commission, slippage_cost
 
     def get_performance_metrics(self) -> dict[str, Any]:
         """

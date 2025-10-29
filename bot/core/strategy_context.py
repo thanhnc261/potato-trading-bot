@@ -776,16 +776,19 @@ class StrategyContext:
         return True
 
     async def process_all_strategies(
-        self, market_data_by_symbol: dict[str, pd.DataFrame]
+        self, market_data_by_symbol: dict[str, pd.DataFrame], resolve_conflicts: bool = True
     ) -> dict[str, StrategySignal]:
         """
-        Process market data for all active strategies.
+        Process market data for all active strategies and optionally resolve conflicts.
 
         Args:
             market_data_by_symbol: Dictionary mapping symbols to OHLCV data
+            resolve_conflicts: Whether to apply conflict resolution (default: True)
 
         Returns:
-            Dictionary mapping strategy names to their generated signals
+            Dictionary mapping strategy names to their generated signals.
+            If resolve_conflicts is True, signals are filtered by conflict resolution.
+            If resolve_conflicts is False, all signals are returned (may have conflicts).
         """
         signals: dict[str, StrategySignal] = {}
 
@@ -806,7 +809,137 @@ class StrategyContext:
             if signal:
                 signals[name] = signal
 
+        # Apply conflict resolution if requested
+        if resolve_conflicts and len(signals) > 1:
+            signals = self.resolve_signal_conflicts(signals)
+
         return signals
+
+    def resolve_signal_conflicts(
+        self, signals: dict[str, StrategySignal]
+    ) -> dict[str, StrategySignal]:
+        """
+        Resolve conflicts when multiple strategies generate signals for the same symbol.
+
+        Args:
+            signals: Dictionary mapping strategy names to their signals
+
+        Returns:
+            Dictionary with resolved signals (one per symbol)
+        """
+        if not signals:
+            return {}
+
+        # Group signals by symbol
+        signals_by_symbol: dict[str, list[tuple[str, StrategySignal]]] = {}
+        for strategy_name, signal in signals.items():
+            # Get symbol from strategy instance
+            strategy_instance = self._strategies.get(strategy_name)
+            if strategy_instance is None:
+                continue
+            symbol = strategy_instance.symbol
+            if symbol not in signals_by_symbol:
+                signals_by_symbol[symbol] = []
+            signals_by_symbol[symbol].append((strategy_name, signal))
+
+        resolved_signals: dict[str, StrategySignal] = {}
+
+        # Resolve conflicts for each symbol
+        for symbol, symbol_signals in signals_by_symbol.items():
+            # If only one signal for this symbol, no conflict
+            if len(symbol_signals) == 1:
+                strategy_name, signal = symbol_signals[0]
+                resolved_signals[strategy_name] = signal
+                continue
+
+            # Multiple signals for same symbol - apply conflict resolution
+            logger.info(
+                "resolving_signal_conflict",
+                symbol=symbol,
+                num_signals=len(symbol_signals),
+                resolution_mode=self.conflict_resolution.value,
+            )
+
+            resolved_signal = None
+
+            if self.conflict_resolution == SignalConflictResolution.FIRST_WINS:
+                # First strategy wins
+                strategy_name, resolved_signal = symbol_signals[0]
+                logger.debug(
+                    "conflict_resolved_first_wins",
+                    winner=strategy_name,
+                    signal=resolved_signal.signal.value,
+                )
+
+            elif self.conflict_resolution == SignalConflictResolution.HIGHEST_CONFIDENCE:
+                # Highest confidence wins
+                winner = max(symbol_signals, key=lambda x: x[1].confidence)
+                strategy_name, resolved_signal = winner
+                logger.debug(
+                    "conflict_resolved_highest_confidence",
+                    winner=strategy_name,
+                    confidence=resolved_signal.confidence,
+                    signal=resolved_signal.signal.value,
+                )
+
+            elif self.conflict_resolution == SignalConflictResolution.WEIGHTED_AVERAGE:
+                # Weighted average by strategy allocation
+                # For now, use highest confidence as fallback
+                # TODO: Implement proper weighted averaging for position size
+                winner = max(symbol_signals, key=lambda x: x[1].confidence)
+                strategy_name, resolved_signal = winner
+                logger.debug(
+                    "conflict_resolved_weighted_average",
+                    winner=strategy_name,
+                    note="using_highest_confidence_fallback",
+                )
+
+            elif self.conflict_resolution == SignalConflictResolution.VETO:
+                # Any HOLD signal vetoes execution
+                from bot.core.strategy import Signal
+
+                has_hold = any(sig[1].signal == Signal.HOLD for sig in symbol_signals)
+                if has_hold:
+                    logger.debug("conflict_resolved_veto", result="vetoed_by_hold")
+                    # Don't add any signal for this symbol
+                    continue
+                else:
+                    # Use highest confidence among non-HOLD signals
+                    winner = max(symbol_signals, key=lambda x: x[1].confidence)
+                    strategy_name, resolved_signal = winner
+                    logger.debug(
+                        "conflict_resolved_veto",
+                        winner=strategy_name,
+                        result="no_veto",
+                    )
+
+            elif self.conflict_resolution == SignalConflictResolution.UNANIMOUS:
+                # All strategies must agree
+                from bot.core.strategy import Signal
+
+                all_signals = [sig[1].signal for sig in symbol_signals]
+                if len(set(all_signals)) == 1:
+                    # All agree - use highest confidence
+                    winner = max(symbol_signals, key=lambda x: x[1].confidence)
+                    strategy_name, resolved_signal = winner
+                    logger.debug(
+                        "conflict_resolved_unanimous",
+                        winner=strategy_name,
+                        result="unanimous_agreement",
+                    )
+                else:
+                    logger.debug(
+                        "conflict_resolved_unanimous",
+                        result="no_unanimous_agreement",
+                        signals=[s.value for s in all_signals],
+                    )
+                    # No agreement - don't execute
+                    continue
+
+            if resolved_signal:
+                resolved_signals[strategy_name] = resolved_signal
+
+        return resolved_signals
 
     def get_portfolio_metrics(self) -> dict[str, Any]:
         """

@@ -273,6 +273,67 @@ PHASE_2_TASKS = [
     },
 ]
 
+PHASE_3_TASKS = [
+    {
+        "title": "BOT-13 - LLM Manager - Multi-Provider Support",
+        "description": """Build unified interface to multiple LLM providers with fallback chain.
+
+**Acceptance Criteria**:
+- [ ] Create `bot/ai/llm_manager.py`
+- [ ] Support OpenAI, Anthropic, local models
+- [ ] Implement fallback chain: primary → secondary → local
+- [ ] Track per-provider usage costs
+- [ ] Enforce monthly budget limits
+- [ ] Response caching with 1-hour TTL
+- [ ] Circuit breaker for repeated failures
+- [ ] Response validation for JSON schema/hallucination checks
+- [ ] Async API calls with timeout handling
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 4-5 days
+**Priority**: High
+**Phase**: Phase 3 - LLM Integration Layer
+""",
+    },
+    {
+        "title": "BOT-14 - AI Trend Predictor - Basic",
+        "description": """Implement LLM-powered trend prediction for a single timeframe.
+
+**Acceptance Criteria**:
+- [ ] Create `bot/ai/ai_trend_predictor.py`
+- [ ] Build prompts incorporating technical indicator summaries
+- [ ] Enforce structured JSON output contract
+- [ ] Parse direction, confidence, and reasoning from LLM response
+- [ ] Support single timeframe prediction (initial scope)
+- [ ] Integrate with LLM Manager
+- [ ] Cache predictions to reduce repeated calls
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 3-4 days
+**Priority**: High
+**Phase**: Phase 3 - LLM Integration Layer
+""",
+    },
+    {
+        "title": "BOT-15 - Prompt Engineering & System Prompts",
+        "description": """Design robust system and task prompts for trading analysis workflows.
+
+**Acceptance Criteria**:
+- [ ] Create reusable system prompt templates
+- [ ] Define strict JSON output schema and validation rules
+- [ ] Implement prompt versioning for A/B testing
+- [ ] Add guardrails to keep responses data-driven (no speculation)
+- [ ] Include reasoning chain-of-thought guidance
+- [ ] Document prompt update workflow for future iterations
+- [ ] Use `make lint`, `make typecheck`, and `make testall` to verify before commit
+
+**Estimated Time**: 2-3 days
+**Priority**: High
+**Phase**: Phase 3 - LLM Integration Layer
+""",
+    },
+]
+
 PHASE_DEFINITIONS = {
     "phase1": {
         "label": "Phase 1 - Foundation",
@@ -282,9 +343,13 @@ PHASE_DEFINITIONS = {
         "label": "Phase 2 - Traditional Strategy Expansion & Backtesting",
         "tasks": PHASE_2_TASKS,
     },
+    "phase3": {
+        "label": "Phase 3 - LLM Integration Layer",
+        "tasks": PHASE_3_TASKS,
+    },
 }
 
-PHASE_SEQUENCE = ["phase1", "phase2"]
+PHASE_SEQUENCE = ["phase1", "phase2", "phase3"]
 
 
 def create_task(project_id: str, task: Dict) -> bool:
@@ -317,7 +382,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--phase",
         default="all",
-        help="Which phase to import (phase1, phase2, 1, 2, or all). Defaults to all.",
+        help="Which phase to import (phase1, phase2, phase3, 1, 2, 3, or all). Defaults to all.",
     )
     return parser.parse_args()
 
@@ -339,6 +404,10 @@ def normalize_phase_name(raw_phase: str) -> str:
         "phase2": "phase2",
         "traditional": "phase2",
         "backtesting": "phase2",
+        "3": "phase3",
+        "phase3": "phase3",
+        "llm": "phase3",
+        "integration": "phase3",
     }
 
     return phase_aliases.get(value, "")

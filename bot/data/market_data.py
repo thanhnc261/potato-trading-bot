@@ -307,12 +307,14 @@ class MarketDataStream:
             config["apiKey"] = self._api_key
             config["secret"] = self._api_secret
 
-        # Enable testnet if supported
-        if self.testnet and hasattr(exchange_class, "set_sandbox_mode"):
-            options: dict[str, Any] = config["options"]
-            options["sandboxMode"] = True
+        # Create exchange instance
+        exchange = exchange_class(config)
 
-        return exchange_class(config)
+        # Enable testnet/sandbox mode if supported
+        if self.testnet and hasattr(exchange, "set_sandbox_mode"):
+            exchange.set_sandbox_mode(True)
+
+        return exchange
 
     async def connect(self) -> None:
         """
@@ -495,16 +497,14 @@ class MarketDataStream:
                 # Fetch tickers for all subscribed symbols
                 symbols_list = list(self._subscribed_symbols)
 
-                # Use watch_ticker if available (WebSocket), otherwise fetch_ticker (REST)
+                # Fetch tickers for all subscribed symbols using REST API
                 for symbol in symbols_list:
                     try:
-                        # Check if exchange supports WebSocket
-                        if self._exchange is not None and hasattr(self._exchange, "watch_ticker"):
-                            ticker = await self._exchange.watch_ticker(symbol)
-                        elif self._exchange is not None:
-                            ticker = await self._exchange.fetch_ticker(symbol)
-                        else:
+                        if self._exchange is None:
                             continue
+
+                        # Use REST API fetch_ticker (WebSocket not supported in ccxt)
+                        ticker = await self._exchange.fetch_ticker(symbol)
 
                         # Normalize and process tick
                         tick = self._normalize_tick(ticker, symbol)
@@ -533,8 +533,7 @@ class MarketDataStream:
                         )
 
                 # Small delay between iterations for REST polling
-                if not hasattr(self._exchange, "watch_ticker"):
-                    await asyncio.sleep(1)
+                await asyncio.sleep(1)
 
             except asyncio.CancelledError:
                 logger.info("streaming_cancelled")
