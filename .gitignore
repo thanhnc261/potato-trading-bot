@@ -101,3 +101,5 @@ docs/_build/
 !.gitkeep
 paper_trading_results/*
 backtest_results/*
+backtest_results/trades.csv
+backtest_results/equity_curve.csv
