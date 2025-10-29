@@ -686,8 +686,9 @@ class SimulatedExchange(ExchangeInterface):
     def execute_order(
         self,
         signal: "Signal",
-        quantity: Decimal,
+        quantity: Decimal | float,
         volatility: float,
+        symbol: str = "BTCUSDT",
     ) -> tuple[Decimal, Decimal, Decimal]:
         """
         Synchronous order execution for backtesting.
@@ -697,8 +698,9 @@ class SimulatedExchange(ExchangeInterface):
 
         Args:
             signal: Trading signal (BUY/SELL)
-            quantity: Order quantity
+            quantity: Order quantity (will be converted to Decimal if float)
             volatility: Market volatility for slippage calculation
+            symbol: Trading symbol (default: BTCUSDT)
 
         Returns:
             Tuple of (execution_price, commission, slippage_cost)
@@ -708,9 +710,9 @@ class SimulatedExchange(ExchangeInterface):
         """
         from bot.core.strategy import Signal
 
-        # For backtesting, we assume BTCUSDT as the default symbol
-        # In a real implementation, this should be passed as a parameter
-        symbol = "BTCUSDT"
+        # Convert quantity to Decimal if it's a float
+        if isinstance(quantity, float):
+            quantity = Decimal(str(quantity))
 
         if symbol not in self.market_prices:
             raise InvalidOrderError(f"No market price available for {symbol}")

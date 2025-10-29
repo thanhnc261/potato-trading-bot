@@ -30,6 +30,7 @@ import pandas as pd
 from structlog import get_logger
 
 from bot.core.strategy import BaseStrategy, Position, RSIStrategy, Signal, StrategySignal
+from bot.execution.adapters.simulated import SimulatedExchange
 
 logger = get_logger(__name__)
 
@@ -207,141 +208,141 @@ class BacktestResults:
         logger.info("equity_curve_saved", equity_file=str(equity_file))
 
 
-class SimulatedExchange:
-    """
-    Simulated exchange for backtesting with realistic execution modeling.
-
-    Features:
-    - Slippage simulation based on volatility
-    - Execution delay modeling
-    - Commission calculation
-    - Order fill simulation
-    """
-
-    def __init__(
-        self,
-        commission_rate: float = 0.001,
-        slippage_factor: float = 0.001,
-        execution_delay_ms: int = 100,
-    ):
-        """
-        Initialize simulated exchange.
-
-        Args:
-            commission_rate: Commission rate per trade
-            slippage_factor: Slippage factor for execution
-            execution_delay_ms: Execution delay in milliseconds
-        """
-        self.commission_rate = commission_rate
-        self.slippage_factor = slippage_factor
-        self.execution_delay_ms = execution_delay_ms
-
-        logger.info(
-            "simulated_exchange_initialized",
-            commission_rate=commission_rate,
-            slippage_factor=slippage_factor,
-            execution_delay_ms=execution_delay_ms,
-        )
-
-    def calculate_slippage(
-        self,
-        price: float,
-        side: str,
-        volatility: float = 0.01,
-    ) -> tuple[float, float]:
-        """
-        Calculate realistic slippage based on market conditions.
-
-        Slippage model:
-        - Base slippage from slippage_factor
-        - Additional slippage based on volatility
-        - Random component for realism
-        - Always unfavorable to the trader
-
-        Args:
-            price: Order price
-            side: Order side (LONG/SHORT)
-            volatility: Current market volatility
-
-        Returns:
-            Tuple of (execution_price, slippage_cost)
-        """
-        # Base slippage
-        base_slippage = price * self.slippage_factor
-
-        # Volatility-adjusted slippage (higher volatility = more slippage)
-        vol_slippage = price * volatility * 0.5
-
-        # Random component (0-50% of base slippage)
-        random_slippage = base_slippage * random.uniform(0, 0.5)
-
-        # Total slippage
-        total_slippage = base_slippage + vol_slippage + random_slippage
-
-        # Apply slippage (always unfavorable)
-        if side == "LONG":
-            # Buy: price increases
-            execution_price = price + total_slippage
-        else:
-            # Sell: price decreases
-            execution_price = price - total_slippage
-
-        slippage_cost = abs(execution_price - price) * 1.0  # Per unit
-
-        return execution_price, slippage_cost
-
-    def execute_order(
-        self,
-        signal: StrategySignal,
-        size: float,
-        current_volatility: float = 0.01,
-    ) -> tuple[float, float, float]:
-        """
-        Simulate order execution with slippage and commission.
-
-        Args:
-            signal: Trading signal
-            size: Order size
-            current_volatility: Current market volatility
-
-        Returns:
-            Tuple of (execution_price, total_commission, total_slippage)
-        """
-        # Simulate execution delay
-        if self.execution_delay_ms > 0:
-            # In backtest, we just record the delay
-            # In reality, price might have moved during this time
-            pass
-
-        # Determine side
-        side = "LONG" if signal.signal == Signal.BUY else "SHORT"
-
-        # Calculate slippage
-        execution_price, slippage_per_unit = self.calculate_slippage(
-            signal.price,
-            side,
-            current_volatility,
-        )
-
-        # Calculate commission
-        notional_value = execution_price * size
-        commission = notional_value * self.commission_rate
-
-        # Total slippage cost
-        total_slippage = slippage_per_unit * size
-
-        logger.debug(
-            "order_executed",
-            side=side,
-            requested_price=signal.price,
-            execution_price=execution_price,
-            size=size,
-            commission=commission,
-            slippage=total_slippage,
-        )
-
-        return execution_price, commission, total_slippage
-
+# class SimulatedExchange:
+#     """
+#     Simulated exchange for backtesting with realistic execution modeling.
+# 
+#     Features:
+#     - Slippage simulation based on volatility
+#     - Execution delay modeling
+#     - Commission calculation
+#     - Order fill simulation
+#     """
+# 
+#     def __init__(
+#         self,
+#         commission_rate: float = 0.001,
+#         slippage_factor: float = 0.001,
+#         execution_delay_ms: int = 100,
+#     ):
+#         """
+#         Initialize simulated exchange.
+# 
+#         Args:
+#             commission_rate: Commission rate per trade
+#             slippage_factor: Slippage factor for execution
+#             execution_delay_ms: Execution delay in milliseconds
+#         """
+#         self.commission_rate = commission_rate
+#         self.slippage_factor = slippage_factor
+#         self.execution_delay_ms = execution_delay_ms
+# 
+#         logger.info(
+#             "simulated_exchange_initialized",
+#             commission_rate=commission_rate,
+#             slippage_factor=slippage_factor,
+#             execution_delay_ms=execution_delay_ms,
+#         )
+# 
+#     def calculate_slippage(
+#         self,
+#         price: float,
+#         side: str,
+#         volatility: float = 0.01,
+#     ) -> tuple[float, float]:
+#         """
+#         Calculate realistic slippage based on market conditions.
+# 
+#         Slippage model:
+#         - Base slippage from slippage_factor
+#         - Additional slippage based on volatility
+#         - Random component for realism
+#         - Always unfavorable to the trader
+# 
+#         Args:
+#             price: Order price
+#             side: Order side (LONG/SHORT)
+#             volatility: Current market volatility
+# 
+#         Returns:
+#             Tuple of (execution_price, slippage_cost)
+#         """
+#         # Base slippage
+#         base_slippage = price * self.slippage_factor
+# 
+#         # Volatility-adjusted slippage (higher volatility = more slippage)
+#         vol_slippage = price * volatility * 0.5
+# 
+#         # Random component (0-50% of base slippage)
+#         random_slippage = base_slippage * random.uniform(0, 0.5)
+# 
+#         # Total slippage
+#         total_slippage = base_slippage + vol_slippage + random_slippage
+# 
+#         # Apply slippage (always unfavorable)
+#         if side == "LONG":
+#             # Buy: price increases
+#             execution_price = price + total_slippage
+#         else:
+#             # Sell: price decreases
+#             execution_price = price - total_slippage
+# 
+#         slippage_cost = abs(execution_price - price) * 1.0  # Per unit
+# 
+#         return execution_price, slippage_cost
+# 
+#     def execute_order(
+#         self,
+#         signal: StrategySignal,
+#         size: float,
+#         current_volatility: float = 0.01,
+#     ) -> tuple[float, float, float]:
+#         """
+#         Simulate order execution with slippage and commission.
+# 
+#         Args:
+#             signal: Trading signal
+#             size: Order size
+#             current_volatility: Current market volatility
+# 
+#         Returns:
+#             Tuple of (execution_price, total_commission, total_slippage)
+#         """
+#         # Simulate execution delay
+#         if self.execution_delay_ms > 0:
+#             # In backtest, we just record the delay
+#             # In reality, price might have moved during this time
+#             pass
+# 
+#         # Determine side
+#         side = "LONG" if signal.signal == Signal.BUY else "SHORT"
+# 
+#         # Calculate slippage
+#         execution_price, slippage_per_unit = self.calculate_slippage(
+#             signal.price,
+#             side,
+#             current_volatility,
+#         )
+# 
+#         # Calculate commission
+#         notional_value = execution_price * size
+#         commission = notional_value * self.commission_rate
+# 
+#         # Total slippage cost
+#         total_slippage = slippage_per_unit * size
+# 
+#         logger.debug(
+#             "order_executed",
+#             side=side,
+#             requested_price=signal.price,
+#             execution_price=execution_price,
+#             size=size,
+#             commission=commission,
+#             slippage=total_slippage,
+#         )
+# 
+#         return execution_price, commission, total_slippage
+# 
 
 class BacktestEngine:
     """
@@ -561,12 +562,23 @@ class BacktestEngine:
             pd.DataFrame([bar]), window=1
         )  # Use close price volatility
 
-        # Execute order
+        # Update exchange with current market price
+        from decimal import Decimal
+
+        self.exchange.update_market_price(self.config.symbol, Decimal(str(bar["close"])))
+
+        # Execute order (extract Signal enum from StrategySignal)
         execution_price, commission, slippage = self.exchange.execute_order(
-            signal,
+            signal.signal,  # Extract Signal enum
             position_size,
             volatility,
+            symbol=self.config.symbol,
         )
+
+        # Convert Decimal results to float for calculations
+        execution_price = float(execution_price)
+        commission = float(commission)
+        slippage = float(slippage)
 
         # Calculate total cost
         total_cost = (execution_price * position_size) + commission + (slippage * position_size)
@@ -624,21 +636,26 @@ class BacktestEngine:
         # Calculate volatility for slippage
         volatility = self.calculate_volatility(pd.DataFrame([bar]), window=1)
 
-        # Simulate exit order execution
-        exit_signal = StrategySignal(
-            signal=Signal.SELL if position.side.value == "long" else Signal.BUY,
-            timestamp=int(exit_time.timestamp() * 1000),
-            price=exit_price,
-            confidence=1.0,
-            metadata={},
-            reason=reason,
-        )
+        # Determine exit signal direction
+        exit_signal_type = Signal.SELL if position.side.value == "long" else Signal.BUY
 
+        # Update exchange with current market price
+        from decimal import Decimal as Dec
+
+        self.exchange.update_market_price(self.config.symbol, Dec(str(exit_price)))
+
+        # Simulate exit order execution
         execution_price, commission, slippage = self.exchange.execute_order(
-            exit_signal,
+            exit_signal_type,
             position.size,
             volatility,
+            symbol=self.config.symbol,
         )
+
+        # Convert Decimal results to float for calculations
+        execution_price = float(execution_price)
+        commission = float(commission)
+        slippage = float(slippage)
 
         # Calculate PnL
         if position.side.value == "long":

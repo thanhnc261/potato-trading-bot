@@ -100,3 +100,4 @@ docs/_build/
 # Keep empty directories
 !.gitkeep
 paper_trading_results/*
+backtest_results/*
