@@ -17,8 +17,8 @@ from email.mime.text import MIMEText
 import structlog
 
 try:
-    from telegram import Bot
-    from telegram.error import TelegramError
+    from telegram import Bot  # type: ignore
+    from telegram.error import TelegramError  # type: ignore
 
     TELEGRAM_AVAILABLE = True
 except ImportError:
