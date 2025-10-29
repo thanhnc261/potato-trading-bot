@@ -24,8 +24,8 @@ from enum import Enum
 from typing import Any
 
 import structlog
-from anthropic import AsyncAnthropic  # type: ignore
-from openai import AsyncOpenAI  # type: ignore
+from anthropic import AsyncAnthropic  # type: ignore[import-not-found]
+from openai import AsyncOpenAI  # type: ignore[import-not-found]
 from pydantic import BaseModel, Field, field_validator
 
 logger = structlog.get_logger(__name__)
@@ -392,7 +392,7 @@ class OpenAIProvider(LLMProvider):
         try:
             response = await self.client.chat.completions.create(
                 model=self.config.model,
-                messages=messages,
+                messages=messages,  # type: ignore[arg-type]
                 max_tokens=max_tokens or self.config.max_tokens,
                 temperature=temperature if temperature is not None else self.config.temperature,
             )
@@ -468,7 +468,7 @@ class AnthropicProvider(LLMProvider):
             if system_prompt:
                 kwargs["system"] = system_prompt
 
-            response = await self.client.messages.create(**kwargs)
+            response = await self.client.messages.create(**kwargs)  # type: ignore[call-overload]
 
             latency_ms = (time.time() - start_time) * 1000
             prompt_tokens = response.usage.input_tokens

@@ -58,7 +58,7 @@ class TestTelegramNotifier:
 
         # Mock Bot class directly
         with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
+            with patch("bot.risk.notifications.TelegramBot", return_value=mock_bot):
                 # Create notifier
                 notifier = TelegramNotifier(telegram_config)
 
@@ -74,7 +74,7 @@ class TestTelegramNotifier:
         mock_bot = AsyncMock()
 
         with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
+            with patch("bot.risk.notifications.TelegramBot", return_value=mock_bot):
                 notifier = TelegramNotifier(telegram_config)
 
                 await notifier.send_alert(emergency_event)
@@ -116,8 +116,8 @@ class TestTelegramNotifier:
         mock_bot.send_message.side_effect = MockTelegramError("Network error")
 
         with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
-                with patch("bot.risk.notifications.TelegramError", MockTelegramError):
+            with patch("bot.risk.notifications.TelegramBot", return_value=mock_bot):
+                with patch("bot.risk.notifications.TelegramErrorType", MockTelegramError):
                     notifier = TelegramNotifier(telegram_config)
 
                     # Should not raise exception
@@ -268,7 +268,7 @@ class TestNotificationManager:
         mock_smtp_class.return_value.__enter__.return_value = mock_smtp
 
         with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
+            with patch("bot.risk.notifications.TelegramBot", return_value=mock_bot):
                 # Create manager with both notifiers
                 manager = NotificationManager(
                     telegram_config=telegram_config,
@@ -297,7 +297,7 @@ class TestNotificationManager:
         mock_bot = AsyncMock()
 
         with patch("bot.risk.notifications.TELEGRAM_AVAILABLE", True):
-            with patch("bot.risk.notifications.Bot", return_value=mock_bot):
+            with patch("bot.risk.notifications.TelegramBot", return_value=mock_bot):
                 manager = NotificationManager(telegram_config=telegram_config)
 
                 await manager.send_alert(emergency_event)
