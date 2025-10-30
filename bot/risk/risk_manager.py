@@ -645,7 +645,7 @@ class RiskManager:
                     try:
                         # Use item() to convert numpy scalar to Python scalar
                         correlation: float = float(
-                            corr_value.item() if hasattr(corr_value, "item") else corr_value  # type: ignore[arg-type]
+                            corr_value.item() if hasattr(corr_value, "item") else corr_value
                         )
                     except (TypeError, ValueError, AttributeError):
                         correlation = 0.0
