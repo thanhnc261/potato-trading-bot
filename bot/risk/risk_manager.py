@@ -642,6 +642,8 @@ class RiskManager:
                 if pos_symbol in self._correlation_matrix.columns:
                     corr_value = self._correlation_matrix.loc[symbol, pos_symbol]
                     # Convert pandas/numpy scalar to Python float for type safety
+                    # Note: CI may report type error here due to pandas version differences
+                    # The try-except handles all conversion cases safely
                     try:
                         # Use item() to convert numpy scalar to Python scalar
                         correlation: float = float(
